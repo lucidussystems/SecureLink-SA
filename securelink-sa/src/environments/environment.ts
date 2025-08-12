@@ -5,11 +5,11 @@
 export const environment = {
   production: false,
   apiBaseUrl: 'http://localhost:3000',
-  websocketUrl: 'ws://localhost:3001',
+  websocketUrl: '', // Disabled for development to prevent connection errors
   
-  // Supabase Configuration
-  supabaseUrl: 'https://your-project.supabase.co',
-  supabaseAnonKey: 'your-anon-key',
+  // Supabase Configuration - Real credentials
+  supabaseUrl: 'https://owxuhscvynbaqpuavoje.supabase.co',
+  supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93eHVoc2N2eW5iYXFwdWF2b2plIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2MDI4OTgsImV4cCI6MjA2ODE3ODg5OH0.sZx0OJxFqeCytXyd2Pq4ro1AhmIRTPXcb9igeZOemkI',
   
   // Google Maps
   googleMapsApiKey: 'your-google-maps-api-key',
@@ -18,11 +18,11 @@ export const environment = {
   eskomApiKey: 'your-eskom-api-key',
   cityPowerApiKey: 'your-city-power-api-key',
   
-  // Feature Flags
-  enableLoadShedding: true,
-  enableMultiLanguage: true,
+  // Feature Flags - Enable authentication and core features
+  enableLoadShedding: false,
+  enableMultiLanguage: false,
   enableOfflineMode: true,
-  enableBackgroundTracking: true,
+  enableBackgroundTracking: false, // Keep disabled for web development
   
   // App Configuration
   appName: 'SecureLink SA',

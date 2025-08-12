@@ -13,7 +13,14 @@ export class SupabaseService {
   constructor() {
     this.supabase = createClient(
       environment.supabaseUrl,
-      environment.supabaseAnonKey
+      environment.supabaseAnonKey,
+      {
+        auth: {
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: false
+        }
+      }
     );
 
     // Listen for auth changes
@@ -22,44 +29,59 @@ export class SupabaseService {
     });
   }
 
-  // Authentication methods
+  // Authentication methods with retry logic
   async signUp(email: string, password: string, userData: any): Promise<AuthResponse> {
-    const { data, error } = await this.supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: userData
-      }
+    return this.retryOperation(async () => {
+      const { data, error } = await this.supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: userData
+        }
+      });
+      
+      if (error) throw error;
+      return { data, error: null };
     });
-    
-    if (error) throw error;
-    return { data, error: null };
   }
 
   async signIn(email: string, password: string): Promise<AuthResponse> {
-    const { data, error } = await this.supabase.auth.signInWithPassword({
-      email,
-      password
+    return this.retryOperation(async () => {
+      const { data, error } = await this.supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) throw error;
+      return { data, error: null };
     });
-    
-    if (error) throw error;
-    return { data, error: null };
   }
 
   async signOut(): Promise<void> {
-    const { error } = await this.supabase.auth.signOut();
-    if (error) throw error;
+    return this.retryOperation(async () => {
+      const { error } = await this.supabase.auth.signOut();
+      if (error) throw error;
+    });
   }
 
   async resetPassword(email: string): Promise<void> {
-    const { error } = await this.supabase.auth.resetPasswordForEmail(email);
-    if (error) throw error;
+    return this.retryOperation(async () => {
+      const { error } = await this.supabase.auth.resetPasswordForEmail(email);
+      if (error) throw error;
+    });
   }
 
-  // User management
+  // User management with retry logic
   async getCurrentUser(): Promise<User | null> {
-    const { data: { user } } = await this.supabase.auth.getUser();
-    return user;
+    try {
+      return await this.retryOperation(async () => {
+        const { data: { user } } = await this.supabase.auth.getUser();
+        return user;
+      });
+    } catch (error) {
+      console.warn('Error getting current user:', error);
+      return null;
+    }
   }
 
   async updateUserProfile(userId: string, updates: any): Promise<any> {
@@ -198,5 +220,26 @@ export class SupabaseService {
   // Observable for current user
   getCurrentUserObservable(): Observable<User | null> {
     return this.currentUser.asObservable();
+  }
+
+  // Retry operation helper to handle Navigator LockManager errors
+  private async retryOperation<T>(operation: () => Promise<T>, maxRetries: number = 3): Promise<T> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error: any) {
+        // Check if it's a Navigator LockManager error
+        if (error.name === 'NavigatorLockAcquireTimeoutError' || 
+            error.message?.includes('lock:sb-your-project-auth-token')) {
+          if (attempt < maxRetries) {
+            // Wait before retrying (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 100));
+            continue;
+          }
+        }
+        throw error;
+      }
+    }
+    throw new Error('Max retries exceeded');
   }
 }

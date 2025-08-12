@@ -25,8 +25,15 @@ export class AppComponent {
 
   initializeApp() {
     this.platform.ready().then(() => {
-      StatusBar.setStyle({ style: Style.Dark });
-      SplashScreen.hide();
+      // Only call StatusBar and SplashScreen on native platforms
+      if (this.platform.is('capacitor')) {
+        StatusBar.setStyle({ style: Style.Dark }).catch(err => {
+          console.warn('StatusBar not available:', err);
+        });
+        SplashScreen.hide().catch(err => {
+          console.warn('SplashScreen not available:', err);
+        });
+      }
       
       // Initialize services
       this.initializeServices();
@@ -43,6 +50,7 @@ export class AppComponent {
       }
     } catch (error) {
       console.error('Error initializing services:', error);
+      // Continue with app initialization even if auth fails
     }
   }
 

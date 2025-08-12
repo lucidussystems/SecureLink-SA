@@ -7,6 +7,7 @@ import { environment } from '../../environments/environment';
 import { io, Socket } from 'socket.io-client';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { Platform } from '@ionic/angular';
 
 @Injectable({
   providedIn: 'root'
@@ -18,32 +19,42 @@ export class EmergencyService {
 
   constructor(
     private supabaseService: SupabaseService,
-    private locationService: LocationService
+    private locationService: LocationService,
+    private platform: Platform
   ) {
     this.initializeSocket();
   }
 
   private initializeSocket(): void {
-    this.socket = io(environment.websocketUrl, {
-      transports: ['websocket'],
-      autoConnect: false
-    });
+    // Only initialize socket if websocket URL is configured
+    if (environment.websocketUrl && environment.websocketUrl !== 'ws://localhost:3001') {
+      this.socket = io(environment.websocketUrl, {
+        transports: ['websocket'],
+        autoConnect: false
+      });
 
-    this.socket.on('connect', () => {
-      console.log('Connected to emergency socket');
-    });
+      this.socket.on('connect', () => {
+        console.log('Connected to emergency socket');
+      });
 
-    this.socket.on('emergency-alert', (data) => {
-      this.handleEmergencyAlert(data);
-    });
+      this.socket.on('emergency-alert', (data) => {
+        this.handleEmergencyAlert(data);
+      });
 
-    this.socket.on('emergency-update', (data) => {
-      this.handleEmergencyUpdate(data);
-    });
+      this.socket.on('emergency-update', (data) => {
+        this.handleEmergencyUpdate(data);
+      });
 
-    this.socket.on('disconnect', () => {
-      console.log('Disconnected from emergency socket');
-    });
+      this.socket.on('disconnect', () => {
+        console.log('Disconnected from emergency socket');
+      });
+
+      this.socket.on('connect_error', (error) => {
+        console.warn('Socket connection error:', error);
+      });
+    } else {
+      console.warn('WebSocket URL not configured, socket functionality disabled');
+    }
   }
 
   // Activate emergency
@@ -224,7 +235,10 @@ export class EmergencyService {
   // Trigger haptic feedback
   private async triggerHapticFeedback(): Promise<void> {
     try {
-      await Haptics.impact({ style: ImpactStyle.Heavy });
+      // Only trigger haptics on native platforms
+      if (this.platform.is('capacitor')) {
+        await Haptics.impact({ style: ImpactStyle.Heavy });
+      }
     } catch (error) {
       console.error('Error triggering haptic feedback:', error);
     }
@@ -233,17 +247,28 @@ export class EmergencyService {
   // Show emergency notification
   private async showEmergencyNotification(emergency: Emergency): Promise<void> {
     try {
-      await LocalNotifications.schedule({
-        notifications: [
-          {
-            id: 1,
-            title: 'Emergency Activated',
+      // Only show notifications on native platforms
+      if (this.platform.is('capacitor')) {
+        await LocalNotifications.schedule({
+          notifications: [
+            {
+              id: 1,
+              title: 'Emergency Activated',
+              body: `Emergency type: ${emergency.type}. Help is on the way.`,
+              sound: 'default',
+              schedule: { at: new Date() }
+            }
+          ]
+        });
+      } else {
+        // For web, show a browser notification
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('Emergency Activated', {
             body: `Emergency type: ${emergency.type}. Help is on the way.`,
-            sound: 'default',
-            schedule: { at: new Date() }
-          }
-        ]
-      });
+            icon: '/assets/icon/favicon.png'
+          });
+        }
+      }
     } catch (error) {
       console.error('Error showing notification:', error);
     }
@@ -252,9 +277,23 @@ export class EmergencyService {
   // Get device information
   private async getDeviceInfo(): Promise<any> {
     try {
-      const { Device } = await import('@capacitor/device');
-      const info = await Device.getInfo();
-      return info;
+      // Only get device info on native platforms
+      if (this.platform.is('capacitor')) {
+        const { Device } = await import('@capacitor/device');
+        const info = await Device.getInfo();
+        return info;
+      } else {
+        // Return basic web browser info
+        return {
+          name: navigator.userAgent,
+          platform: 'web',
+          operatingSystem: 'web',
+          osVersion: 'web',
+          manufacturer: 'web',
+          isVirtual: false,
+          webViewVersion: 'web'
+        };
+      }
     } catch (error) {
       console.error('Error getting device info:', error);
       return {};

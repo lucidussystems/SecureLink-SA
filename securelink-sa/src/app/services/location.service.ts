@@ -3,6 +3,7 @@ import { Geolocation } from '@capacitor/geolocation';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Location } from '../models/emergency.model';
 import { environment } from '../../environments/environment';
+import { Platform } from '@ionic/angular';
 
 @Injectable({
   providedIn: 'root'
@@ -10,17 +11,25 @@ import { environment } from '../../environments/environment';
 export class LocationService {
   private currentLocation = new BehaviorSubject<Location | null>(null);
   private isTracking = new BehaviorSubject<boolean>(false);
-  private watchId: string | null = null;
+  private watchId: string | number | null = null;
 
-  constructor() {}
+  constructor(private platform: Platform) {}
 
   // Get current location once
   async getCurrentLocation(): Promise<Location> {
     try {
-      const position = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: true,
-        timeout: 10000
-      });
+      let position: any;
+
+      if (this.platform.is('capacitor')) {
+        // Use Capacitor Geolocation on native platforms
+        position = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 10000
+        });
+      } else {
+        // Use browser Geolocation API on web
+        position = await this.getBrowserLocation();
+      }
 
       if (!position) {
         throw new Error('Unable to get location');
@@ -43,6 +52,26 @@ export class LocationService {
     }
   }
 
+  // Browser geolocation fallback
+  private getBrowserLocation(): Promise<GeolocationPosition> {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation is not supported by this browser'));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => resolve(position),
+        (error) => reject(error),
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 30000
+        }
+      );
+    });
+  }
+
   // Start continuous location tracking
   async startLocationTracking(): Promise<void> {
     if (this.isTracking.value) {
@@ -50,24 +79,46 @@ export class LocationService {
     }
 
     try {
-      // Request permissions
-      const permissions = await Geolocation.checkPermissions();
-      if (permissions.location !== 'granted') {
-        const request = await Geolocation.requestPermissions();
-        if (request.location !== 'granted') {
-          throw new Error('Location permission denied');
+      if (this.platform.is('capacitor')) {
+        // Use Capacitor Geolocation on native platforms
+        const permissions = await Geolocation.checkPermissions();
+        if (permissions.location !== 'granted') {
+          const request = await Geolocation.requestPermissions();
+          if (request.location !== 'granted') {
+            throw new Error('Location permission denied');
+          }
         }
-      }
 
-      // Start watching position
-      this.watchId = await Geolocation.watchPosition(
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 30000 // 30 seconds
-        },
-        (position) => {
-          if (position) {
+        // Start watching position
+        this.watchId = await Geolocation.watchPosition(
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 30000 // 30 seconds
+          },
+          (position) => {
+            if (position) {
+              const location: Location = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+                altitude: position.coords.altitude || undefined,
+                heading: position.coords.heading || undefined,
+                speed: position.coords.speed || undefined
+              };
+
+              this.currentLocation.next(location);
+            }
+          }
+        );
+      } else {
+        // Use browser Geolocation API on web
+        if (!navigator.geolocation) {
+          throw new Error('Geolocation is not supported by this browser');
+        }
+
+        const webWatchId = navigator.geolocation.watchPosition(
+          (position) => {
             const location: Location = {
               latitude: position.coords.latitude,
               longitude: position.coords.longitude,
@@ -78,9 +129,18 @@ export class LocationService {
             };
 
             this.currentLocation.next(location);
+          },
+          (error) => {
+            console.error('Location tracking error:', error);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 30000
           }
-        }
-      );
+        );
+        this.watchId = webWatchId;
+      }
 
       this.isTracking.next(true);
     } catch (error) {
@@ -92,7 +152,11 @@ export class LocationService {
   // Stop location tracking
   async stopLocationTracking(): Promise<void> {
     if (this.watchId) {
-      await Geolocation.clearWatch({ id: this.watchId });
+      if (this.platform.is('capacitor')) {
+        await Geolocation.clearWatch({ id: this.watchId as string });
+      } else {
+        navigator.geolocation.clearWatch(this.watchId as number);
+      }
       this.watchId = null;
     }
     this.isTracking.next(false);

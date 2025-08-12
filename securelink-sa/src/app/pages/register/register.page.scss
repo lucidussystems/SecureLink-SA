@@ -1,0 +1,47 @@
+.container {
+  padding: 20px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.form-container {
+  h2 {
+    text-align: center;
+    color: var(--ion-color-primary);
+    margin-bottom: 8px;
+  }
+
+  p {
+    text-align: center;
+    color: var(--ion-color-medium);
+    margin-bottom: 30px;
+  }
+}
+
+ion-item {
+  margin-bottom: 16px;
+  --border-radius: 8px;
+  --background: var(--ion-color-light);
+}
+
+.button-container {
+  margin-top: 30px;
+  margin-bottom: 20px;
+}
+
+.login-link {
+  text-align: center;
+  margin-top: 20px;
+
+  p {
+    color: var(--ion-color-medium);
+    margin: 0;
+  }
+
+  a {
+    color: var(--ion-color-primary);
+    text-decoration: none;
+    font-weight: 500;
+    cursor: pointer;
+  }
+}
