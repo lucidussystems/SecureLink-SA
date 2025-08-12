@@ -1,0 +1,189 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>
+      SecureLink SA
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="goToSettings()">
+        <ion-icon name="settings-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div class="container">
+    <!-- Status Bar -->
+    <ion-card class="status-card">
+      <ion-card-content>
+        <div class="status-row">
+          <div class="status-item">
+            <ion-icon name="location-outline" [color]="isLocationTracking ? 'success' : 'medium'"></ion-icon>
+            <span>{{ isLocationTracking ? 'Location Active' : 'Location Inactive' }}</span>
+          </div>
+          <div class="status-item" *ngIf="currentLocation">
+            <ion-icon name="navigate-outline"></ion-icon>
+            <span>{{ currentLocation.latitude | number:'1.4-4' }}, {{ currentLocation.longitude | number:'1.4-4' }}</span>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Active Emergency Alert -->
+    <ion-card *ngIf="activeEmergency" class="emergency-alert" color="danger">
+      <ion-card-content>
+        <div class="emergency-alert-content">
+          <ion-icon name="warning" size="large"></ion-icon>
+          <div class="emergency-text">
+            <h3>Emergency Active</h3>
+            <p>{{ activeEmergency.type | titlecase }} - {{ activeEmergency.status | titlecase }}</p>
+          </div>
+          <ion-button fill="clear" (click)="cancelEmergency()" color="light">
+            Cancel
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Emergency Buttons -->
+    <div class="emergency-section">
+      <h2>Emergency Response</h2>
+      
+      <!-- Main Panic Button -->
+      <div class="panic-button-container">
+        <ion-button 
+          class="panic-button" 
+          color="danger" 
+          size="large" 
+          shape="round"
+          (click)="activatePanicEmergency()"
+          [disabled]="!!activeEmergency">
+          <ion-icon name="warning" size="large"></ion-icon>
+          <div class="panic-text">
+            <h3>PANIC</h3>
+            <p>Emergency Response</p>
+          </div>
+        </ion-button>
+      </div>
+
+      <!-- Secondary Emergency Buttons -->
+      <div class="secondary-buttons">
+        <ion-button 
+          class="emergency-btn silent" 
+          color="warning" 
+          fill="outline"
+          (click)="activateSilentEmergency()"
+          [disabled]="!!activeEmergency">
+          <ion-icon name="volume-mute"></ion-icon>
+          <span>Silent Alarm</span>
+        </ion-button>
+
+        <ion-button 
+          class="emergency-btn medical" 
+          color="tertiary" 
+          fill="outline"
+          (click)="activateMedicalEmergency()"
+          [disabled]="!!activeEmergency">
+          <ion-icon name="medical"></ion-icon>
+          <span>Medical</span>
+        </ion-button>
+
+        <ion-button 
+          class="emergency-btn fire" 
+          color="danger" 
+          fill="outline"
+          (click)="activateFireEmergency()"
+          [disabled]="!!activeEmergency">
+          <ion-icon name="flame"></ion-icon>
+          <span>Fire</span>
+        </ion-button>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <h2>Quick Actions</h2>
+      
+      <ion-grid>
+        <ion-row>
+          <ion-col size="6">
+            <ion-card class="action-card" (click)="goToIncidents()">
+              <ion-card-content>
+                <ion-icon name="document-text-outline" size="large" color="primary"></ion-icon>
+                <h3>Report Incident</h3>
+                <p>Report non-emergency incidents</p>
+              </ion-card-content>
+            </ion-card>
+          </ion-col>
+          
+          <ion-col size="6">
+            <ion-card class="action-card" (click)="goToEmergencyHistory()">
+              <ion-card-content>
+                <ion-icon name="time-outline" size="large" color="secondary"></ion-icon>
+                <h3>History</h3>
+                <p>View past emergencies</p>
+              </ion-card-content>
+            </ion-card>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </div>
+
+    <!-- Emergency Numbers -->
+    <div class="emergency-numbers">
+      <h2>Emergency Numbers</h2>
+      
+      <ion-list>
+        <ion-item button (click)="callEmergencyNumber(emergencyNumbers.police)">
+          <ion-icon name="shield-outline" slot="start" color="primary"></ion-icon>
+          <ion-label>
+            <h3>Police</h3>
+            <p>{{ emergencyNumbers.police }}</p>
+          </ion-label>
+          <ion-icon name="call-outline" slot="end"></ion-icon>
+        </ion-item>
+
+        <ion-item button (click)="callEmergencyNumber(emergencyNumbers.ambulance)">
+          <ion-icon name="medical-outline" slot="start" color="tertiary"></ion-icon>
+          <ion-label>
+            <h3>Ambulance</h3>
+            <p>{{ emergencyNumbers.ambulance }}</p>
+          </ion-label>
+          <ion-icon name="call-outline" slot="end"></ion-icon>
+        </ion-item>
+
+        <ion-item button (click)="callEmergencyNumber(emergencyNumbers.emergency)">
+          <ion-icon name="warning-outline" slot="start" color="danger"></ion-icon>
+          <ion-label>
+            <h3>Emergency Services</h3>
+            <p>{{ emergencyNumbers.emergency }}</p>
+          </ion-label>
+          <ion-icon name="call-outline" slot="end"></ion-icon>
+        </ion-item>
+      </ion-list>
+    </div>
+  </div>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <ion-tabs>
+      <ion-tab-bar slot="bottom">
+        <ion-tab-button tab="home" selected>
+          <ion-icon name="home"></ion-icon>
+          <ion-label>Home</ion-label>
+        </ion-tab-button>
+        
+        <ion-tab-button tab="incidents" (click)="goToIncidents()">
+          <ion-icon name="document-text"></ion-icon>
+          <ion-label>Incidents</ion-label>
+        </ion-tab-button>
+        
+        <ion-tab-button tab="profile" (click)="goToProfile()">
+          <ion-icon name="person"></ion-icon>
+          <ion-label>Profile</ion-label>
+        </ion-tab-button>
+      </ion-tab-bar>
+    </ion-tabs>
+  </ion-toolbar>
+</ion-footer>

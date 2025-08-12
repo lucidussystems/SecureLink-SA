@@ -1,0 +1,7 @@
+{
+  "name": "securelink-sa",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
