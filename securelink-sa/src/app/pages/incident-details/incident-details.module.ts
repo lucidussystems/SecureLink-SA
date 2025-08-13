@@ -2,16 +2,16 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
-import { PAGEPageRoutingModule } from './PAGE-routing.module';
-import { PAGEPage } from './PAGE.page';
+import { IncidentDetailsPageRoutingModule } from './incident-details-routing.module';
+import { IncidentDetailsPage } from './incident-details.page';
 
 @NgModule({
   imports: [
     CommonModule,
     FormsModule,
     IonicModule,
-    PAGEPageRoutingModule
-  ],
-  declarations: [PAGEPage]
+    IncidentDetailsPageRoutingModule,
+    IncidentDetailsPage
+  ]
 })
-export class PAGEPageModule {}
+export class IncidentDetailsPageModule {}

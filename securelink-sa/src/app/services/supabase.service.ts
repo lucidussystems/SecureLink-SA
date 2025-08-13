@@ -1,245 +1,188 @@
 import { Injectable } from '@angular/core';
-import { createClient, SupabaseClient, User, AuthResponse } from '@supabase/supabase-js';
-import { environment } from '../../environments/environment';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { User } from '../models/user.model';
+
+// Mock user data for frontend testing
+const MOCK_USERS = [
+  {
+    id: '1',
+    email: 'test@example.com',
+    firstName: 'John',
+    lastName: 'Doe',
+    phone: '+27123456789',
+    role: 'customer',
+    status: 'active',
+    isVerified: true,
+    preferredLanguage: 'en',
+    biometricEnabled: false,
+    notificationSettings: {
+      emergencyAlerts: true,
+      incidentUpdates: true,
+      securityNews: false,
+      pushNotifications: true,
+      emailNotifications: true,
+      smsNotifications: false
+    },
+    createdAt: new Date('2024-01-01T00:00:00Z'),
+    updatedAt: new Date('2024-01-01T00:00:00Z')
+  }
+];
 
 @Injectable({
   providedIn: 'root'
 })
 export class SupabaseService {
-  private supabase: SupabaseClient;
+  // Mock authentication state
   private currentUser = new BehaviorSubject<User | null>(null);
+  private isInitialized = true;
 
   constructor() {
-    this.supabase = createClient(
-      environment.supabaseUrl,
-      environment.supabaseAnonKey,
-      {
-        auth: {
-          autoRefreshToken: true,
-          persistSession: true,
-          detectSessionInUrl: false
-        }
-      }
-    );
-
-    // Listen for auth changes
-    this.supabase.auth.onAuthStateChange((event, session) => {
-      this.currentUser.next(session?.user || null);
-    });
-  }
-
-  // Authentication methods with retry logic
-  async signUp(email: string, password: string, userData: any): Promise<AuthResponse> {
-    return this.retryOperation(async () => {
-      const { data, error } = await this.supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: userData
-        }
-      });
-      
-      if (error) throw error;
-      return { data, error: null };
-    });
-  }
-
-  async signIn(email: string, password: string): Promise<AuthResponse> {
-    return this.retryOperation(async () => {
-      const { data, error } = await this.supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (error) throw error;
-      return { data, error: null };
-    });
-  }
-
-  async signOut(): Promise<void> {
-    return this.retryOperation(async () => {
-      const { error } = await this.supabase.auth.signOut();
-      if (error) throw error;
-    });
-  }
-
-  async resetPassword(email: string): Promise<void> {
-    return this.retryOperation(async () => {
-      const { error } = await this.supabase.auth.resetPasswordForEmail(email);
-      if (error) throw error;
-    });
-  }
-
-  // User management with retry logic
-  async getCurrentUser(): Promise<User | null> {
-    try {
-      return await this.retryOperation(async () => {
-        const { data: { user } } = await this.supabase.auth.getUser();
-        return user;
-      });
-    } catch (error) {
-      console.warn('Error getting current user:', error);
-      return null;
+    // Check if user is already "logged in" (stored in localStorage)
+    const storedUser = localStorage.getItem('mock_user');
+    if (storedUser) {
+      this.currentUser.next(JSON.parse(storedUser));
     }
   }
 
-  async updateUserProfile(userId: string, updates: any): Promise<any> {
-    const { data, error } = await this.supabase
-      .from('users')
-      .update(updates)
-      .eq('id', userId)
-      .select()
-      .single();
+  // Mock authentication methods
+  async signUp(email: string, password: string, userData: any): Promise<any> {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    if (error) throw error;
-    return data;
+    // Create mock user
+    const newUser: User = {
+      id: Date.now().toString(),
+      email: email,
+      firstName: userData.first_name || '',
+      lastName: userData.last_name || '',
+      phone: userData.phone || '',
+      role: 'customer',
+      status: 'active',
+      isVerified: false,
+      preferredLanguage: 'en',
+      biometricEnabled: false,
+      notificationSettings: {
+        emergencyAlerts: true,
+        incidentUpdates: true,
+        securityNews: false,
+        pushNotifications: true,
+        emailNotifications: true,
+        smsNotifications: false
+      },
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    // Store user in localStorage
+    localStorage.setItem('mock_user', JSON.stringify(newUser));
+    this.currentUser.next(newUser);
+
+    return { data: { user: newUser }, error: null };
   }
 
-  async getUserProfile(userId: string): Promise<any> {
-    const { data, error } = await this.supabase
-      .from('users')
-      .select('*')
-      .eq('id', userId)
-      .single();
+  async signIn(email: string, password: string): Promise<any> {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    if (error) throw error;
-    return data;
+    // Check if user exists in mock data
+    const user = MOCK_USERS.find(u => u.email === email);
+    if (user) {
+      localStorage.setItem('mock_user', JSON.stringify(user));
+      this.currentUser.next(user as User);
+      return { data: { user }, error: null };
+    } else {
+      throw new Error('Invalid credentials');
+    }
   }
 
-  // Emergency methods
-  async createEmergency(emergencyData: any): Promise<any> {
-    const { data, error } = await this.supabase
-      .from('emergencies')
-      .insert(emergencyData)
-      .select()
-      .single();
+  async signOut(): Promise<void> {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
     
-    if (error) throw error;
-    return data;
+    localStorage.removeItem('mock_user');
+    this.currentUser.next(null);
   }
 
-  async getEmergencies(userId: string): Promise<any[]> {
-    const { data, error } = await this.supabase
-      .from('emergencies')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-    
-    if (error) throw error;
-    return data || [];
+  async getCurrentUser(): Promise<User | null> {
+    return this.currentUser.value;
   }
 
-  async updateEmergency(emergencyId: string, updates: any): Promise<any> {
-    const { data, error } = await this.supabase
-      .from('emergencies')
-      .update(updates)
-      .eq('id', emergencyId)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
-  }
-
-  // Incident methods
-  async createIncident(incidentData: any): Promise<any> {
-    const { data, error } = await this.supabase
-      .from('incidents')
-      .insert(incidentData)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
-  }
-
-  async getIncidents(userId: string): Promise<any[]> {
-    const { data, error } = await this.supabase
-      .from('incidents')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-    
-    if (error) throw error;
-    return data || [];
-  }
-
-  async updateIncident(incidentId: string, updates: any): Promise<any> {
-    const { data, error } = await this.supabase
-      .from('incidents')
-      .update(updates)
-      .eq('id', incidentId)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
-  }
-
-  // File upload
-  async uploadFile(bucket: string, path: string, file: File): Promise<string> {
-    const { data, error } = await this.supabase.storage
-      .from(bucket)
-      .upload(path, file);
-    
-    if (error) throw error;
-    
-    const { data: { publicUrl } } = this.supabase.storage
-      .from(bucket)
-      .getPublicUrl(path);
-    
-    return publicUrl;
-  }
-
-  // Real-time subscriptions
-  subscribeToEmergencies(userId: string, callback: (payload: any) => void) {
-    return this.supabase
-      .channel('emergencies')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'emergencies',
-        filter: `user_id=eq.${userId}`
-      }, callback)
-      .subscribe();
-  }
-
-  subscribeToIncidents(userId: string, callback: (payload: any) => void) {
-    return this.supabase
-      .channel('incidents')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'incidents',
-        filter: `user_id=eq.${userId}`
-      }, callback)
-      .subscribe();
-  }
-
-  // Observable for current user
   getCurrentUserObservable(): Observable<User | null> {
     return this.currentUser.asObservable();
   }
 
-  // Retry operation helper to handle Navigator LockManager errors
-  private async retryOperation<T>(operation: () => Promise<T>, maxRetries: number = 3): Promise<T> {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        return await operation();
-      } catch (error: any) {
-        // Check if it's a Navigator LockManager error
-        if (error.name === 'NavigatorLockAcquireTimeoutError' || 
-            error.message?.includes('lock:sb-your-project-auth-token')) {
-          if (attempt < maxRetries) {
-            // Wait before retrying (exponential backoff)
-            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 100));
-            continue;
+  // Mock user profile methods
+  async updateUserProfile(userData: any): Promise<any> {
+    const currentUser = this.currentUser.value;
+    if (!currentUser) throw new Error('No user logged in');
+
+    const updatedUser = { ...currentUser, ...userData };
+    localStorage.setItem('mock_user', JSON.stringify(updatedUser));
+    this.currentUser.next(updatedUser);
+
+    return { data: updatedUser, error: null };
+  }
+
+  // Mock database methods
+  async insert(table: string, data: any): Promise<any> {
+    console.log(`Mock insert into ${table}:`, data);
+    return { data, error: null };
+  }
+
+  async select(table: string, query?: any): Promise<any> {
+    console.log(`Mock select from ${table}:`, query);
+    
+    // Return mock data based on table
+    if (table === 'emergencies') {
+      return {
+        data: [
+          {
+            id: '1',
+            type: 'panic',
+            status: 'resolved',
+            created_at: new Date().toISOString(),
+            location: { latitude: -26.2041, longitude: 28.0473 }
           }
-        }
-        throw error;
-      }
+        ],
+        error: null
+      };
     }
-    throw new Error('Max retries exceeded');
+    
+    if (table === 'incidents') {
+      return {
+        data: [
+          {
+            id: '1',
+            title: 'Suspicious Activity',
+            description: 'Saw someone loitering around the building',
+            status: 'open',
+            created_at: new Date().toISOString()
+          }
+        ],
+        error: null
+      };
+    }
+
+    return { data: [], error: null };
+  }
+
+  async update(table: string, data: any, query?: any): Promise<any> {
+    console.log(`Mock update ${table}:`, data, query);
+    return { data, error: null };
+  }
+
+  async delete(table: string, query?: any): Promise<any> {
+    console.log(`Mock delete from ${table}:`, query);
+    return { data: null, error: null };
+  }
+
+  // Mock storage methods
+  async uploadFile(bucket: string, path: string, file: File): Promise<any> {
+    console.log(`Mock upload to ${bucket}/${path}:`, file.name);
+    return { data: { path: `${bucket}/${path}` }, error: null };
+  }
+
+  async getPublicUrl(bucket: string, path: string): Promise<string> {
+    return `https://mock-storage.example.com/${bucket}/${path}`;
   }
 }

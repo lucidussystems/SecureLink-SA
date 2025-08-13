@@ -20,11 +20,15 @@ const routes: Routes = [
     loadChildren: () => import('./pages/register/register.module').then(m => m.RegisterPageModule)
   },
   {
+    path: 'profile',
+    loadChildren: () => import('./pages/profile/profile.module').then(m => m.ProfilePageModule)
+  },
+  {
     path: 'incidents',
     loadChildren: () => import('./pages/incidents/incidents.module').then(m => m.IncidentsPageModule)
   },
   {
-    path: 'incident-details/:id',
+    path: 'incident-details',
     loadChildren: () => import('./pages/incident-details/incident-details.module').then(m => m.IncidentDetailsPageModule)
   },
   {
@@ -32,16 +36,12 @@ const routes: Routes = [
     loadChildren: () => import('./pages/report-incident/report-incident.module').then(m => m.ReportIncidentPageModule)
   },
   {
-    path: 'emergency-details/:id',
-    loadChildren: () => import('./pages/emergency-details/emergency-details.module').then(m => m.EmergencyDetailsPageModule)
-  },
-  {
     path: 'emergency-history',
     loadChildren: () => import('./pages/emergency-history/emergency-history.module').then(m => m.EmergencyHistoryPageModule)
   },
   {
-    path: 'profile',
-    loadChildren: () => import('./pages/profile/profile.module').then(m => m.ProfilePageModule)
+    path: 'emergency-details',
+    loadChildren: () => import('./pages/emergency-details/emergency-details.module').then(m => m.EmergencyDetailsPageModule)
   },
   {
     path: 'settings',
@@ -55,7 +55,9 @@ const routes: Routes = [
 
 @NgModule({
   imports: [
-    RouterModule.forRoot(routes, { preloadingStrategy: PreloadAllModules })
+    RouterModule.forRoot(routes, { 
+      preloadingStrategy: PreloadAllModules
+    })
   ],
   exports: [RouterModule]
 })

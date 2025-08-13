@@ -7,8 +7,7 @@
       "projectType": "application",
       "schematics": {
         "@ionic/angular-toolkit:page": {
-          "styleext": "scss",
-          "standalone": true
+          "styleext": "scss"
         }
       },
       "root": "",
@@ -49,8 +48,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "2kb",
-                  "maximumError": "4kb"
+                  "maximumWarning": "6kb",
+                  "maximumError": "8kb"
                 }
               ],
               "fileReplacements": [

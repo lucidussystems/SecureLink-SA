@@ -1,36 +1,44 @@
 <ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>Login - SecureLink SA</ion-title>
+  <ion-toolbar class="gradient-primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      <ion-icon name="shield-checkmark" slot="start"></ion-icon>
+      Login - SecureLink SA
+    </ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true" class="ion-padding">
   <div class="login-container">
     <div class="logo-section">
-      <ion-icon name="shield-checkmark" size="large" color="primary"></ion-icon>
+      <ion-icon name="shield-checkmark" class="logo-icon"></ion-icon>
       <h1>SecureLink SA</h1>
       <p>Your safety is our priority</p>
     </div>
 
-    <ion-card>
+    <ion-card class="login-card">
       <ion-card-content>
         <form (ngSubmit)="login()">
-          <ion-item>
+          <ion-item class="form-item">
             <ion-label position="floating">Email</ion-label>
             <ion-input 
               type="email" 
               [(ngModel)]="email" 
               name="email"
+              placeholder="Enter your email"
               required>
             </ion-input>
           </ion-item>
 
-          <ion-item>
+          <ion-item class="form-item">
             <ion-label position="floating">Password</ion-label>
             <ion-input 
               type="password" 
               [(ngModel)]="password" 
               name="password"
+              placeholder="Enter your password"
               required>
             </ion-input>
           </ion-item>
@@ -38,14 +46,15 @@
           <ion-button 
             expand="block" 
             type="submit" 
-            class="login-button">
+            class="login-button gradient-primary">
+            <ion-icon name="log-in" slot="start"></ion-icon>
             Login
           </ion-button>
         </form>
 
         <div class="register-link">
           <p>Don't have an account? 
-            <ion-button fill="clear" (click)="goToRegister()">
+            <ion-button fill="clear" (click)="goToRegister()" class="register-button">
               Register here
             </ion-button>
           </p>

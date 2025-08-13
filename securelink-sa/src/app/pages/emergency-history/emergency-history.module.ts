@@ -10,8 +10,8 @@ import { EmergencyHistoryPage } from './emergency-history.page';
     CommonModule,
     FormsModule,
     IonicModule,
-    EmergencyHistoryPageRoutingModule
-  ],
-  declarations: [EmergencyHistoryPage]
+    EmergencyHistoryPageRoutingModule,
+    EmergencyHistoryPage
+  ]
 })
 export class EmergencyHistoryPageModule {}

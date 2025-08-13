@@ -10,8 +10,8 @@ import { ReportIncidentPage } from './report-incident.page';
     CommonModule,
     FormsModule,
     IonicModule,
-    ReportIncidentPageRoutingModule
-  ],
-  declarations: [ReportIncidentPage]
+    ReportIncidentPageRoutingModule,
+    ReportIncidentPage
+  ]
 })
 export class ReportIncidentPageModule {}

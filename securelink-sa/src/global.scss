@@ -32,6 +32,227 @@
  * https://ionicframework.com/docs/theming/dark-mode
  */
 
-/* @import "@ionic/angular/css/palettes/dark.always.css"; */
-/* @import "@ionic/angular/css/palettes/dark.class.css"; */
-@import '@ionic/angular/css/palettes/dark.system.css';
+/* Force dark mode for security theme */
+@import "@ionic/angular/css/palettes/dark.always.css";
+
+/**
+ * Security Theme Global Styles
+ * -----------------------------------------------------
+ * Custom styles for SecureLink SA application
+ */
+
+// Global security theme styles
+body {
+  background: var(--ion-background-color);
+  color: var(--ion-text-color);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Security-focused card styles
+ion-card {
+  background: var(--ion-card-background);
+  border-radius: var(--security-border-radius);
+  box-shadow: var(--security-shadow);
+  border: 1px solid var(--ion-border-color);
+  transition: var(--security-transition);
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.4);
+  }
+}
+
+// Security button styles
+ion-button {
+  border-radius: var(--security-border-radius);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: var(--security-transition);
+  
+  &.button-solid {
+    box-shadow: var(--security-shadow);
+  }
+  
+  &.button-outline {
+    border-width: 2px;
+  }
+}
+
+// Security input styles
+ion-input, ion-textarea, ion-select {
+  --background: var(--ion-card-background);
+  --border-radius: var(--security-border-radius);
+  --border-color: var(--ion-border-color);
+  --border-width: 1px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+  --color: var(--ion-text-color);
+  --placeholder-color: var(--ion-color-medium);
+  
+  &:focus-within {
+    --border-color: var(--ion-color-primary);
+    --border-width: 2px;
+  }
+}
+
+// Security toolbar styles
+ion-toolbar {
+  --background: var(--ion-toolbar-background);
+  --color: var(--ion-toolbar-color);
+  --border-color: var(--ion-border-color);
+  
+  ion-title {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+}
+
+// Security list styles
+ion-list {
+  background: transparent;
+  
+  ion-item {
+    --background: var(--ion-item-background);
+    --border-color: var(--ion-border-color);
+    --color: var(--ion-item-color);
+    --padding-start: 16px;
+    --padding-end: 16px;
+    --padding-top: 12px;
+    --padding-bottom: 12px;
+    border-radius: var(--security-border-radius);
+    margin-bottom: 8px;
+    
+    &:hover {
+      --background: var(--ion-color-step-150);
+    }
+  }
+}
+
+// Security status indicators
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  
+  &.status-safe {
+    background: var(--ion-color-success);
+    color: var(--ion-color-success-contrast);
+  }
+  
+  &.status-warning {
+    background: var(--ion-color-warning);
+    color: var(--ion-color-warning-contrast);
+  }
+  
+  &.status-danger {
+    background: var(--ion-color-danger);
+    color: var(--ion-color-danger-contrast);
+  }
+  
+  &.status-info {
+    background: var(--ion-color-primary);
+    color: var(--ion-color-primary-contrast);
+  }
+}
+
+// Security gradient backgrounds
+.gradient-primary {
+  background: var(--security-gradient-primary);
+}
+
+.gradient-danger {
+  background: var(--security-gradient-danger);
+}
+
+.gradient-success {
+  background: var(--security-gradient-success);
+}
+
+// Security animations
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.slide-in-up {
+  animation: slideInUp 0.3s ease-out;
+}
+
+// Security responsive utilities
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+  
+  ion-card {
+    margin: 8px;
+  }
+}
+
+// Security loading states
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  
+  ion-spinner {
+    --color: var(--ion-color-primary);
+  }
+}
+
+// Security error states
+.error-message {
+  background: var(--ion-color-danger);
+  color: var(--ion-color-danger-contrast);
+  padding: 12px 16px;
+  border-radius: var(--security-border-radius);
+  margin: 16px 0;
+  font-weight: 500;
+}
+
+// Security success states
+.success-message {
+  background: var(--ion-color-success);
+  color: var(--ion-color-success-contrast);
+  padding: 12px 16px;
+  border-radius: var(--security-border-radius);
+  margin: 16px 0;
+  font-weight: 500;
+}

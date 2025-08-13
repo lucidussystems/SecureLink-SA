@@ -1,119 +1,110 @@
 import { Injectable } from '@angular/core';
+import { Platform } from '@ionic/angular';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { Emergency, EmergencyType, EmergencyStatus } from '../models/emergency.model';
 import { SupabaseService } from './supabase.service';
 import { LocationService } from './location.service';
-import { Emergency, EmergencyType, EmergencyStatus } from '../models/emergency.model';
-import { environment } from '../../environments/environment';
-import { io, Socket } from 'socket.io-client';
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
-import { LocalNotifications } from '@capacitor/local-notifications';
-import { Platform } from '@ionic/angular';
 
 @Injectable({
   providedIn: 'root'
 })
 export class EmergencyService {
-  private socket: Socket | null = null;
   private activeEmergency = new BehaviorSubject<Emergency | null>(null);
-  private emergencyUpdates = new BehaviorSubject<any[]>([]);
+  private emergencyHistory = new BehaviorSubject<Emergency[]>([]);
 
   constructor(
+    private platform: Platform,
     private supabaseService: SupabaseService,
-    private locationService: LocationService,
-    private platform: Platform
+    private locationService: LocationService
   ) {
-    this.initializeSocket();
+    this.loadMockEmergencyHistory();
   }
 
-  private initializeSocket(): void {
-    // Only initialize socket if websocket URL is configured
-    if (environment.websocketUrl && environment.websocketUrl !== 'ws://localhost:3001') {
-      this.socket = io(environment.websocketUrl, {
-        transports: ['websocket'],
-        autoConnect: false
-      });
-
-      this.socket.on('connect', () => {
-        console.log('Connected to emergency socket');
-      });
-
-      this.socket.on('emergency-alert', (data) => {
-        this.handleEmergencyAlert(data);
-      });
-
-      this.socket.on('emergency-update', (data) => {
-        this.handleEmergencyUpdate(data);
-      });
-
-      this.socket.on('disconnect', () => {
-        console.log('Disconnected from emergency socket');
-      });
-
-      this.socket.on('connect_error', (error) => {
-        console.warn('Socket connection error:', error);
-      });
-    } else {
-      console.warn('WebSocket URL not configured, socket functionality disabled');
-    }
+  // Mock emergency history data
+  private loadMockEmergencyHistory() {
+    const mockEmergencies: Emergency[] = [
+      {
+        id: '1',
+        userId: '1',
+        securityCompanyId: 'default',
+        type: 'panic',
+        status: 'resolved',
+        priority: 'high',
+        location: { latitude: -26.2041, longitude: 28.0473 },
+        address: '123 Main St, Johannesburg',
+        description: 'Emergency panic button activated',
+        isActive: false,
+        isSilent: false,
+        photos: [],
+        videos: [],
+        emergencyContacts: [],
+        createdAt: new Date('2024-01-15T10:30:00Z'),
+        updatedAt: new Date('2024-01-15T10:45:00Z'),
+        resolvedAt: new Date('2024-01-15T10:45:00Z')
+      },
+      {
+        id: '2',
+        userId: '1',
+        securityCompanyId: 'default',
+        type: 'medical',
+        status: 'resolved',
+        priority: 'critical',
+        location: { latitude: -26.2041, longitude: 28.0473 },
+        address: '123 Main St, Johannesburg',
+        description: 'Medical emergency - chest pain',
+        isActive: false,
+        isSilent: false,
+        photos: [],
+        videos: [],
+        emergencyContacts: [],
+        createdAt: new Date('2024-01-10T14:20:00Z'),
+        updatedAt: new Date('2024-01-10T14:35:00Z'),
+        resolvedAt: new Date('2024-01-10T14:35:00Z')
+      }
+    ];
+    this.emergencyHistory.next(mockEmergencies);
   }
 
-  // Activate emergency
   async activateEmergency(type: EmergencyType, isSilent: boolean = false): Promise<Emergency> {
     try {
       // Get current location
       const location = await this.locationService.getCurrentLocation();
       
-      // Get current user
-      const user = await this.supabaseService.getCurrentUser();
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-
-      // Create emergency data
-      const emergencyData = {
-        user_id: user.id,
-        security_company_id: 'default', // This should come from user profile
+      // Create emergency object
+      const emergency: Emergency = {
+        id: Date.now().toString(),
+        userId: '1', // Mock user ID
+        securityCompanyId: 'default',
         type,
-        status: 'active' as EmergencyStatus,
-        priority: 'high' as any,
-        location: {
-          latitude: location.latitude,
-          longitude: location.longitude,
-          accuracy: location.accuracy
-        },
-        is_active: true,
-        is_silent: isSilent,
-        description: `Emergency activated: ${type}`,
-        emergency_contacts: [],
-        metadata: {
-          activated_at: new Date().toISOString(),
-          device_info: await this.getDeviceInfo()
-        }
+        status: 'active',
+        priority: this.getPriorityForType(type),
+        location,
+        address: 'Current Location', // Would be reverse geocoded in real app
+        description: `${type} emergency activated`,
+        isActive: true,
+        isSilent,
+        photos: [],
+        videos: [],
+        emergencyContacts: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
 
-      // Create emergency in database
-      const emergency = await this.supabaseService.createEmergency(emergencyData);
-      
       // Set as active emergency
       this.activeEmergency.next(emergency);
+
+      // Add to history
+      const currentHistory = this.emergencyHistory.value;
+      this.emergencyHistory.next([emergency, ...currentHistory]);
 
       // Trigger haptic feedback
       await this.triggerHapticFeedback();
 
-      // Send emergency alert via socket
-      if (this.socket && this.socket.connected) {
-        this.socket.emit('emergency-activated', {
-          emergencyId: emergency.id,
-          userId: user.id,
-          securityCompanyId: emergency.security_company_id,
-          type,
-          location,
-          isSilent
-        });
-      }
+      // Send notification
+      await this.sendEmergencyNotification(emergency);
 
-      // Show notification
-      await this.showEmergencyNotification(emergency);
+      // Log to console for debugging
+      console.log('Emergency activated:', emergency);
 
       return emergency;
     } catch (error) {
@@ -122,23 +113,30 @@ export class EmergencyService {
     }
   }
 
-  // Cancel emergency
   async cancelEmergency(emergencyId: string): Promise<void> {
     try {
-      const updates = {
-        status: 'cancelled' as EmergencyStatus,
-        is_active: false,
-        cancelled_at: new Date().toISOString()
-      };
+      const currentEmergency = this.activeEmergency.value;
+      if (currentEmergency && currentEmergency.id === emergencyId) {
+        // Update emergency status
+        const updatedEmergency: Emergency = {
+          ...currentEmergency,
+          status: 'cancelled' as EmergencyStatus,
+          isActive: false,
+          updatedAt: new Date(),
+          cancelledAt: new Date()
+        };
 
-      await this.supabaseService.updateEmergency(emergencyId, updates);
-      
-      // Clear active emergency
-      this.activeEmergency.next(null);
+        // Update in history
+        const currentHistory = this.emergencyHistory.value;
+        const updatedHistory = currentHistory.map(emergency => 
+          emergency.id === emergencyId ? updatedEmergency : emergency
+        );
+        this.emergencyHistory.next(updatedHistory);
 
-      // Send cancellation via socket
-      if (this.socket && this.socket.connected) {
-        this.socket.emit('emergency-cancelled', { emergencyId });
+        // Clear active emergency
+        this.activeEmergency.next(null);
+
+        console.log('Emergency cancelled:', emergencyId);
       }
     } catch (error) {
       console.error('Error cancelling emergency:', error);
@@ -146,193 +144,159 @@ export class EmergencyService {
     }
   }
 
-  // Get user's emergencies
-  async getUserEmergencies(): Promise<Emergency[]> {
+  async resolveEmergency(emergencyId: string): Promise<void> {
     try {
-      const user = await this.supabaseService.getCurrentUser();
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-
-      return await this.supabaseService.getEmergencies(user.id);
-    } catch (error) {
-      console.error('Error getting user emergencies:', error);
-      throw error;
-    }
-  }
-
-  // Update emergency status
-  async updateEmergencyStatus(emergencyId: string, status: EmergencyStatus, message?: string): Promise<void> {
-    try {
-      const updates: any = {
-        status,
-        updated_at: new Date().toISOString()
-      };
-
-      if (status === 'resolved') {
-        updates.resolved_at = new Date().toISOString();
-        updates.is_active = false;
-      }
-
-      await this.supabaseService.updateEmergency(emergencyId, updates);
-
-      // Send update via socket
-      if (this.socket && this.socket.connected) {
-        this.socket.emit('emergency-status-update', {
-          emergencyId,
-          status,
-          message,
-          timestamp: new Date().toISOString()
-        });
-      }
-    } catch (error) {
-      console.error('Error updating emergency status:', error);
-      throw error;
-    }
-  }
-
-  // Join emergency room for real-time updates
-  joinEmergencyRoom(emergencyId: string): void {
-    if (this.socket && this.socket.connected) {
-      this.socket.emit('join-room', emergencyId);
-    }
-  }
-
-  // Leave emergency room
-  leaveEmergencyRoom(emergencyId: string): void {
-    if (this.socket && this.socket.connected) {
-      this.socket.emit('leave-room', emergencyId);
-    }
-  }
-
-  // Connect to socket
-  connectSocket(): void {
-    if (this.socket && !this.socket.connected) {
-      this.socket.connect();
-    }
-  }
-
-  // Disconnect from socket
-  disconnectSocket(): void {
-    if (this.socket && this.socket.connected) {
-      this.socket.disconnect();
-    }
-  }
-
-  // Handle emergency alert
-  private handleEmergencyAlert(data: any): void {
-    console.log('Emergency alert received:', data);
-    // Handle incoming emergency alerts (for security personnel)
-  }
-
-  // Handle emergency update
-  private handleEmergencyUpdate(data: any): void {
-    console.log('Emergency update received:', data);
-    const currentUpdates = this.emergencyUpdates.value;
-    this.emergencyUpdates.next([...currentUpdates, data]);
-  }
-
-  // Trigger haptic feedback
-  private async triggerHapticFeedback(): Promise<void> {
-    try {
-      // Only trigger haptics on native platforms
-      if (this.platform.is('capacitor')) {
-        await Haptics.impact({ style: ImpactStyle.Heavy });
-      }
-    } catch (error) {
-      console.error('Error triggering haptic feedback:', error);
-    }
-  }
-
-  // Show emergency notification
-  private async showEmergencyNotification(emergency: Emergency): Promise<void> {
-    try {
-      // Only show notifications on native platforms
-      if (this.platform.is('capacitor')) {
-        await LocalNotifications.schedule({
-          notifications: [
-            {
-              id: 1,
-              title: 'Emergency Activated',
-              body: `Emergency type: ${emergency.type}. Help is on the way.`,
-              sound: 'default',
-              schedule: { at: new Date() }
-            }
-          ]
-        });
-      } else {
-        // For web, show a browser notification
-        if ('Notification' in window && Notification.permission === 'granted') {
-          new Notification('Emergency Activated', {
-            body: `Emergency type: ${emergency.type}. Help is on the way.`,
-            icon: '/assets/icon/favicon.png'
-          });
+      const currentHistory = this.emergencyHistory.value;
+      const updatedHistory = currentHistory.map(emergency => {
+        if (emergency.id === emergencyId) {
+          return {
+            ...emergency,
+            status: 'resolved' as EmergencyStatus,
+            isActive: false,
+            updatedAt: new Date(),
+            resolvedAt: new Date()
+          } as Emergency;
         }
+        return emergency;
+      });
+      this.emergencyHistory.next(updatedHistory);
+
+      // Clear active emergency if it's the one being resolved
+      const currentEmergency = this.activeEmergency.value;
+      if (currentEmergency && currentEmergency.id === emergencyId) {
+        this.activeEmergency.next(null);
       }
+
+      console.log('Emergency resolved:', emergencyId);
     } catch (error) {
-      console.error('Error showing notification:', error);
+      console.error('Error resolving emergency:', error);
+      throw error;
     }
   }
 
-  // Get device information
-  private async getDeviceInfo(): Promise<any> {
-    try {
-      // Only get device info on native platforms
-      if (this.platform.is('capacitor')) {
-        const { Device } = await import('@capacitor/device');
-        const info = await Device.getInfo();
-        return info;
-      } else {
-        // Return basic web browser info
-        return {
-          name: navigator.userAgent,
-          platform: 'web',
-          operatingSystem: 'web',
-          osVersion: 'web',
-          manufacturer: 'web',
-          isVirtual: false,
-          webViewVersion: 'web'
-        };
-      }
-    } catch (error) {
-      console.error('Error getting device info:', error);
-      return {};
-    }
+  getActiveEmergency(): Emergency | null {
+    return this.activeEmergency.value;
   }
 
-  // Get active emergency observable
   getActiveEmergencyObservable(): Observable<Emergency | null> {
     return this.activeEmergency.asObservable();
   }
 
-  // Get emergency updates observable
-  getEmergencyUpdatesObservable(): Observable<any[]> {
-    return this.emergencyUpdates.asObservable();
+  getEmergencyHistory(): Emergency[] {
+    return this.emergencyHistory.value;
   }
 
-  // Get active emergency value
-  getActiveEmergencyValue(): Emergency | null {
-    return this.activeEmergency.value;
+  getEmergencyHistoryObservable(): Observable<Emergency[]> {
+    return this.emergencyHistory.asObservable();
   }
 
-  // Check if emergency is active
-  isEmergencyActive(): boolean {
-    return this.activeEmergency.value !== null;
+  async getEmergencyById(emergencyId: string): Promise<Emergency | null> {
+    const history = this.emergencyHistory.value;
+    return history.find(emergency => emergency.id === emergencyId) || null;
+  }
+
+  // Emergency numbers (South Africa)
+  getEmergencyNumbers() {
+    return {
+      police: '10111',
+      ambulance: '10177',
+      emergency: '112',
+      poisonControl: '0861 555 777'
+    };
   }
 
   // Call emergency number
-  async callEmergencyNumber(number: string): Promise<void> {
-    try {
-      // This would integrate with the device's phone functionality
-      // For web, we can use the tel: protocol
+  callEmergencyNumber(number: string): void {
+    if (this.platform.is('capacitor')) {
+      // Use Capacitor CallNumber plugin if available
+      console.log('Calling emergency number:', number);
+    } else {
+      // Web fallback
       window.open(`tel:${number}`, '_self');
-    } catch (error) {
-      console.error('Error calling emergency number:', error);
     }
   }
 
-  // Get emergency numbers
-  getEmergencyNumbers(): any {
-    return environment.emergencyNumbers;
+  // Private helper methods
+  private getPriorityForType(type: EmergencyType): 'low' | 'medium' | 'high' | 'critical' {
+    switch (type) {
+      case 'panic':
+      case 'medical':
+        return 'critical';
+      case 'fire':
+        return 'high';
+      case 'silent_alarm':
+        return 'high';
+      default:
+        return 'medium';
+    }
+  }
+
+  private async triggerHapticFeedback(): Promise<void> {
+    if (this.platform.is('capacitor')) {
+      try {
+        const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
+        await Haptics.impact({ style: ImpactStyle.Heavy });
+      } catch (error) {
+        console.warn('Haptics not available:', error);
+      }
+    }
+  }
+
+  private async sendEmergencyNotification(emergency: Emergency): Promise<void> {
+    if (this.platform.is('capacitor')) {
+      try {
+        const { LocalNotifications } = await import('@capacitor/local-notifications');
+        await LocalNotifications.schedule({
+          notifications: [
+            {
+              title: 'Emergency Activated',
+              body: `${emergency.type} emergency has been activated`,
+              id: 1,
+              sound: 'default',
+              actionTypeId: 'OPEN_APP'
+            }
+          ]
+        });
+      } catch (error) {
+        console.warn('Local notifications not available:', error);
+      }
+    } else {
+      // Web fallback
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('Emergency Activated', {
+          body: `${emergency.type} emergency has been activated`,
+          icon: '/assets/icon/favicon.png'
+        });
+      }
+    }
+  }
+
+  // Mock device info
+  async getDeviceInfo(): Promise<any> {
+    if (this.platform.is('capacitor')) {
+      try {
+        const { Device } = await import('@capacitor/device');
+        const info = await Device.getInfo();
+        return info;
+      } catch (error) {
+        console.warn('Device info not available:', error);
+        return { name: 'Unknown Device', platform: 'web' };
+      }
+    } else {
+      return {
+        name: navigator.userAgent,
+        platform: 'web',
+        webVersion: navigator.appVersion
+      };
+    }
+  }
+
+  // Socket connection (disabled for frontend testing)
+  connectSocket(): void {
+    console.log('Socket connection disabled for frontend testing');
+  }
+
+  disconnectSocket(): void {
+    console.log('Socket disconnection disabled for frontend testing');
   }
 }

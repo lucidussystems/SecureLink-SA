@@ -10,8 +10,8 @@ import { EmergencyDetailsPage } from './emergency-details.page';
     CommonModule,
     FormsModule,
     IonicModule,
-    EmergencyDetailsPageRoutingModule
-  ],
-  declarations: [EmergencyDetailsPage]
+    EmergencyDetailsPageRoutingModule,
+    EmergencyDetailsPage
+  ]
 })
 export class EmergencyDetailsPageModule {}
