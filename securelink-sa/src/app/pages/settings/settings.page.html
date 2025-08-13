@@ -1,12 +1,240 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
     <ion-title>Settings</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <div class="ion-padding">
-    <h1>Settings Page</h1>
-    <p>Settings functionality coming soon...</p>
+  <div *ngIf="isLoading" class="loading-container">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Loading settings...</p>
+  </div>
+
+  <div *ngIf="!isLoading" class="ion-padding">
+    <!-- User Profile Section -->
+    <ion-card class="profile-card">
+      <ion-card-content>
+        <div class="profile-header">
+          <div class="profile-avatar">
+            <ion-avatar>
+              <img [src]="userProfile?.avatar || 'assets/default-avatar.svg'" alt="Profile">
+            </ion-avatar>
+          </div>
+          <div class="profile-info">
+            <h2>{{ userProfile?.fullName || 'User Name' }}</h2>
+            <p>{{ userProfile?.email || 'user@example.com' }}</p>
+            <p class="user-role">{{ userProfile?.role || 'Security User' }}</p>
+          </div>
+        </div>
+        <ion-button expand="block" fill="outline" (click)="editProfile()">
+          <ion-icon name="create" slot="start"></ion-icon>
+          Edit Profile
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Settings Sections -->
+    <ion-list>
+      <!-- Account Settings -->
+      <ion-item-divider>
+        <ion-label>Account</ion-label>
+      </ion-item-divider>
+
+      <ion-item button (click)="changePassword()">
+        <ion-icon name="lock-closed" slot="start" color="primary"></ion-icon>
+        <ion-label>Change Password</ion-label>
+        <ion-icon name="chevron-forward" slot="end"></ion-icon>
+      </ion-item>
+
+      <ion-item button (click)="updateEmail()">
+        <ion-icon name="mail" slot="start" color="primary"></ion-icon>
+        <ion-label>Update Email</ion-label>
+        <ion-icon name="chevron-forward" slot="end"></ion-icon>
+      </ion-item>
+
+      <ion-item button (click)="manageSecurityCompany()">
+        <ion-icon name="business" slot="start" color="primary"></ion-icon>
+        <ion-label>Security Company</ion-label>
+        <ion-icon name="chevron-forward" slot="end"></ion-icon>
+      </ion-item>
+
+      <!-- Notifications -->
+      <ion-item-divider>
+        <ion-label>Notifications</ion-label>
+      </ion-item-divider>
+
+      <ion-item>
+        <ion-icon name="notifications" slot="start" color="primary"></ion-icon>
+        <ion-label>Push Notifications</ion-label>
+        <ion-toggle 
+          [(ngModel)]="settings.pushNotifications" 
+          (ionChange)="updateNotificationSettings()">
+        </ion-toggle>
+      </ion-item>
+
+      <ion-item>
+        <ion-icon name="mail" slot="start" color="primary"></ion-icon>
+        <ion-label>Email Notifications</ion-label>
+        <ion-toggle 
+          [(ngModel)]="settings.emailNotifications" 
+          (ionChange)="updateNotificationSettings()">
+        </ion-toggle>
+      </ion-item>
+
+      <ion-item>
+        <ion-icon name="volume-high" slot="start" color="primary"></ion-icon>
+        <ion-label>Sound Alerts</ion-label>
+        <ion-toggle 
+          [(ngModel)]="settings.soundAlerts" 
+          (ionChange)="updateNotificationSettings()">
+        </ion-toggle>
+      </ion-item>
+
+      <ion-item>
+        <ion-icon name="phone-portrait" slot="start" color="primary"></ion-icon>
+        <ion-label>Vibration</ion-label>
+        <ion-toggle 
+          [(ngModel)]="settings.vibration" 
+          (ionChange)="updateNotificationSettings()">
+        </ion-toggle>
+      </ion-item>
+
+      <!-- Privacy & Security -->
+      <ion-item-divider>
+        <ion-label>Privacy & Security</ion-label>
+      </ion-item-divider>
+
+      <ion-item>
+        <ion-icon name="finger-print" slot="start" color="primary"></ion-icon>
+        <ion-label>Biometric Login</ion-label>
+        <ion-toggle 
+          [(ngModel)]="settings.biometricLogin" 
+          (ionChange)="updateSecuritySettings()">
+        </ion-toggle>
+      </ion-item>
+
+      <ion-item>
+        <ion-icon name="location" slot="start" color="primary"></ion-icon>
+        <ion-label>Location Services</ion-label>
+        <ion-toggle 
+          [(ngModel)]="settings.locationServices" 
+          (ionChange)="updateLocationSettings()">
+        </ion-toggle>
+      </ion-item>
+
+      <ion-item>
+        <ion-icon name="eye" slot="start" color="primary"></ion-icon>
+        <ion-label>Public Profile</ion-label>
+        <ion-toggle 
+          [(ngModel)]="settings.publicProfile" 
+          (ionChange)="updatePrivacySettings()">
+        </ion-toggle>
+      </ion-item>
+
+      <ion-item button (click)="exportData()">
+        <ion-icon name="download" slot="start" color="primary"></ion-icon>
+        <ion-label>Export My Data</ion-label>
+        <ion-icon name="chevron-forward" slot="end"></ion-icon>
+      </ion-item>
+
+      <!-- App Preferences -->
+      <ion-item-divider>
+        <ion-label>App Preferences</ion-label>
+      </ion-item-divider>
+
+      <ion-item>
+        <ion-icon name="moon" slot="start" color="primary"></ion-icon>
+        <ion-label>Dark Mode</ion-label>
+        <ion-toggle 
+          [(ngModel)]="settings.darkMode" 
+          (ionChange)="toggleDarkMode()">
+        </ion-toggle>
+      </ion-item>
+
+      <ion-item button (click)="selectLanguage()">
+        <ion-icon name="language" slot="start" color="primary"></ion-icon>
+        <ion-label>Language</ion-label>
+        <ion-note slot="end">{{ settings.language | titlecase }}</ion-note>
+        <ion-icon name="chevron-forward" slot="end"></ion-icon>
+      </ion-item>
+
+      <ion-item button (click)="selectTheme()">
+        <ion-icon name="color-palette" slot="start" color="primary"></ion-icon>
+        <ion-label>Theme</ion-label>
+        <ion-note slot="end">{{ settings.theme | titlecase }}</ion-note>
+        <ion-icon name="chevron-forward" slot="end"></ion-icon>
+      </ion-item>
+
+      <ion-item>
+        <ion-icon name="refresh" slot="start" color="primary"></ion-icon>
+        <ion-label>Auto-refresh</ion-label>
+        <ion-toggle 
+          [(ngModel)]="settings.autoRefresh" 
+          (ionChange)="updateAppSettings()">
+        </ion-toggle>
+      </ion-item>
+
+      <!-- Support & About -->
+      <ion-item-divider>
+        <ion-label>Support & About</ion-label>
+      </ion-item-divider>
+
+      <ion-item button (click)="viewHelp()">
+        <ion-icon name="help-circle" slot="start" color="primary"></ion-icon>
+        <ion-label>Help & Support</ion-label>
+        <ion-icon name="chevron-forward" slot="end"></ion-icon>
+      </ion-item>
+
+      <ion-item button (click)="contactSupport()">
+        <ion-icon name="chatbubbles" slot="start" color="primary"></ion-icon>
+        <ion-label>Contact Support</ion-label>
+        <ion-icon name="chevron-forward" slot="end"></ion-icon>
+      </ion-item>
+
+      <ion-item button (click)="viewPrivacyPolicy()">
+        <ion-icon name="shield-checkmark" slot="start" color="primary"></ion-icon>
+        <ion-label>Privacy Policy</ion-label>
+        <ion-icon name="chevron-forward" slot="end"></ion-icon>
+      </ion-item>
+
+      <ion-item button (click)="viewTermsOfService()">
+        <ion-icon name="document-text" slot="start" color="primary"></ion-icon>
+        <ion-label>Terms of Service</ion-label>
+        <ion-icon name="chevron-forward" slot="end"></ion-icon>
+      </ion-item>
+
+      <ion-item button (click)="viewAbout()">
+        <ion-icon name="information-circle" slot="start" color="primary"></ion-icon>
+        <ion-label>About</ion-label>
+        <ion-note slot="end">v{{ appVersion }}</ion-note>
+        <ion-icon name="chevron-forward" slot="end"></ion-icon>
+      </ion-item>
+
+      <!-- Danger Zone -->
+      <ion-item-divider color="danger">
+        <ion-label>Danger Zone</ion-label>
+      </ion-item-divider>
+
+      <ion-item button (click)="clearCache()" color="warning">
+        <ion-icon name="trash" slot="start" color="warning"></ion-icon>
+        <ion-label>Clear Cache</ion-label>
+        <ion-icon name="chevron-forward" slot="end"></ion-icon>
+      </ion-item>
+
+      <ion-item button (click)="logout()" color="danger">
+        <ion-icon name="log-out" slot="start" color="danger"></ion-icon>
+        <ion-label>Logout</ion-label>
+        <ion-icon name="chevron-forward" slot="end"></ion-icon>
+      </ion-item>
+
+      <ion-item button (click)="deleteAccount()" color="danger">
+        <ion-icon name="trash" slot="start" color="danger"></ion-icon>
+        <ion-label>Delete Account</ion-label>
+        <ion-icon name="chevron-forward" slot="end"></ion-icon>
+      </ion-item>
+    </ion-list>
   </div>
 </ion-content>

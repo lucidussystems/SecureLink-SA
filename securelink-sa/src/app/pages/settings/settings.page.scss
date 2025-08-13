@@ -1,1 +1,359 @@
-// Settings page styles
+ion-content {
+  --background: var(--ion-color-light);
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  
+  ion-spinner {
+    margin-bottom: 16px;
+  }
+  
+  p {
+    color: var(--ion-color-medium);
+    margin: 0;
+  }
+}
+
+.profile-card {
+  margin: 16px 0;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  
+  ion-card-content {
+    padding: 24px;
+  }
+  
+  .profile-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    
+    .profile-avatar {
+      margin-right: 16px;
+      
+      ion-avatar {
+        width: 80px;
+        height: 80px;
+        border: 3px solid var(--ion-color-primary);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+    }
+    
+    .profile-info {
+      flex: 1;
+      
+      h2 {
+        margin: 0 0 4px 0;
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: var(--ion-color-dark);
+      }
+      
+      p {
+        margin: 2px 0;
+        color: var(--ion-color-medium);
+        font-size: 0.9rem;
+        
+        &.user-role {
+          color: var(--ion-color-primary);
+          font-weight: 500;
+          font-size: 0.85rem;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+      }
+    }
+  }
+}
+
+ion-list {
+  background: transparent;
+  padding: 0;
+  margin: 16px 0;
+}
+
+ion-item-divider {
+  --background: var(--ion-color-primary);
+  --color: white;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+  margin: 0;
+  border-radius: 8px 8px 0 0;
+  
+  ion-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  &[color="danger"] {
+    --background: var(--ion-color-danger);
+  }
+}
+
+ion-item {
+  --background: white;
+  --border-radius: 0;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+  margin: 0;
+  border-bottom: 1px solid var(--ion-color-light-shade);
+  
+  &:last-child {
+    border-bottom: none;
+    border-radius: 0 0 8px 8px;
+  }
+  
+  &:first-child {
+    border-radius: 8px 8px 0 0;
+  }
+  
+  &:only-child {
+    border-radius: 8px;
+  }
+  
+  ion-icon[slot="start"] {
+    margin-right: 12px;
+    font-size: 1.2rem;
+  }
+  
+  ion-label {
+    font-weight: 500;
+    color: var(--ion-color-dark);
+  }
+  
+  ion-note {
+    color: var(--ion-color-medium);
+    font-size: 0.85rem;
+  }
+  
+  ion-toggle {
+    --background: var(--ion-color-light-shade);
+    --background-checked: var(--ion-color-primary);
+    --handle-background: white;
+    --handle-background-checked: white;
+    --handle-box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  
+  &[color="warning"] {
+    --background: var(--ion-color-warning-tint);
+    --color: var(--ion-color-warning-shade);
+    
+    ion-icon[slot="start"] {
+      color: var(--ion-color-warning);
+    }
+  }
+  
+  &[color="danger"] {
+    --background: var(--ion-color-danger-tint);
+    --color: var(--ion-color-danger-shade);
+    
+    ion-icon[slot="start"] {
+      color: var(--ion-color-danger);
+    }
+  }
+}
+
+// Card styling
+ion-card {
+  margin: 16px 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+// Button styling
+ion-button {
+  --border-radius: 8px;
+  --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-weight: 500;
+  text-transform: none;
+  
+  &[fill="outline"] {
+    --border-color: var(--ion-color-primary);
+    --color: var(--ion-color-primary);
+  }
+}
+
+// Responsive design
+@media (max-width: 576px) {
+  .profile-card .profile-header {
+    flex-direction: column;
+    text-align: center;
+    
+    .profile-avatar {
+      margin-right: 0;
+      margin-bottom: 16px;
+    }
+  }
+  
+  ion-item {
+    --padding-start: 12px;
+    --padding-end: 12px;
+  }
+  
+  ion-item-divider {
+    --padding-start: 12px;
+    --padding-end: 12px;
+  }
+}
+
+@media (min-width: 577px) {
+  .profile-card {
+    max-width: 600px;
+    margin: 16px auto;
+  }
+  
+  ion-list {
+    max-width: 600px;
+    margin: 16px auto;
+  }
+}
+
+// Animation for items
+ion-item {
+  animation: slideInUp 0.3s ease-out;
+  animation-fill-mode: both;
+  
+  @for $i from 1 through 20 {
+    &:nth-child(#{$i}) {
+      animation-delay: #{$i * 0.05}s;
+    }
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Focus states
+ion-item:focus-within {
+  --background: var(--ion-color-light);
+}
+
+ion-button:focus-within {
+  --border-color: var(--ion-color-primary);
+  --border-width: 2px;
+}
+
+// Hover effects
+ion-item:hover {
+  --background: var(--ion-color-light);
+  transform: translateX(4px);
+  transition: all 0.2s ease;
+}
+
+ion-button:hover {
+  transform: translateY(-1px);
+  --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+}
+
+// Toggle animations
+ion-toggle {
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: scale(1.05);
+  }
+}
+
+// Loading states
+ion-spinner {
+  --color: var(--ion-color-primary);
+}
+
+// Success states
+ion-button.button-has-success {
+  --background: var(--ion-color-success);
+  --color: white;
+}
+
+// Warning states
+ion-button.button-has-warning {
+  --background: var(--ion-color-warning);
+  --color: white;
+}
+
+// Danger states
+ion-button.button-has-danger {
+  --background: var(--ion-color-danger);
+  --color: white;
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+  ion-content {
+    --background: var(--ion-color-dark);
+  }
+  
+  ion-item {
+    --background: var(--ion-color-dark-shade);
+    --color: var(--ion-color-light);
+    border-bottom-color: var(--ion-color-dark-tint);
+  }
+  
+  ion-card {
+    --background: var(--ion-color-dark-shade);
+  }
+  
+  .profile-card .profile-info h2 {
+    color: var(--ion-color-light);
+  }
+  
+  .profile-card .profile-info p {
+    color: var(--ion-color-light-shade);
+  }
+}
+
+// Accessibility improvements
+ion-item:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+ion-button:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  ion-item {
+    border-bottom-width: 2px;
+  }
+  
+  ion-item-divider {
+    border-bottom: 2px solid var(--ion-color-primary-shade);
+  }
+}
+
+// Reduced motion support
+@media (prefers-reduced-motion: reduce) {
+  ion-item,
+  ion-button {
+    animation: none;
+    transition: none;
+  }
+  
+  ion-toggle {
+    transition: none;
+  }
+}
