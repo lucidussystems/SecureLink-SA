@@ -1,12 +1,299 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
     <ion-title>Profile</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="editProfile()">
+        <ion-icon name="create"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <div class="ion-padding">
-    <h1>Profile Page</h1>
-    <p>Profile functionality coming soon...</p>
+  <div *ngIf="isLoading" class="loading-container">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Loading profile...</p>
+  </div>
+
+  <div *ngIf="!isLoading && user" class="ion-padding">
+    <!-- Profile Header -->
+    <ion-card class="profile-header">
+      <ion-card-content>
+        <div class="profile-avatar">
+          <ion-avatar *ngIf="user.profilePicture">
+            <img [src]="user.profilePicture" alt="Profile picture">
+          </ion-avatar>
+          <ion-avatar *ngIf="!user.profilePicture">
+            <ion-icon name="person" size="large"></ion-icon>
+          </ion-avatar>
+          <ion-button fill="clear" size="small" (click)="changeProfilePicture()">
+            <ion-icon name="camera"></ion-icon>
+          </ion-button>
+        </div>
+        <div class="profile-info">
+          <h1>{{ user.firstName }} {{ user.lastName }}</h1>
+          <p>{{ user.email }}</p>
+          <p *ngIf="user.phone">{{ user.phone }}</p>
+          <ion-badge [color]="getStatusColor(user.status)">
+            {{ user.status | titlecase }}
+          </ion-badge>
+          <ion-badge *ngIf="user.isVerified" color="success">
+            <ion-icon name="checkmark-circle"></ion-icon>
+            Verified
+          </ion-badge>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Personal Information -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Personal Information</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="info-grid">
+          <div class="info-item">
+            <ion-label>Full Name</ion-label>
+            <p>{{ user.firstName }} {{ user.lastName }}</p>
+          </div>
+          <div class="info-item">
+            <ion-label>Email</ion-label>
+            <p>{{ user.email }}</p>
+          </div>
+          <div class="info-item" *ngIf="user.phone">
+            <ion-label>Phone</ion-label>
+            <p>{{ user.phone }}</p>
+          </div>
+          <div class="info-item" *ngIf="userProfile?.dateOfBirth">
+            <ion-label>Date of Birth</ion-label>
+            <p>{{ userProfile?.dateOfBirth | date:'mediumDate' }}</p>
+          </div>
+          <div class="info-item" *ngIf="userProfile?.address">
+            <ion-label>Address</ion-label>
+            <p>{{ userProfile?.address }}</p>
+          </div>
+          <div class="info-item" *ngIf="userProfile?.city">
+            <ion-label>City</ion-label>
+            <p>{{ userProfile?.city }}, {{ userProfile?.province }}</p>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Medical Information -->
+    <ion-card *ngIf="userProfile?.medicalInfo || userProfile?.allergies?.length || userProfile?.medications?.length">
+      <ion-card-header>
+        <ion-card-title>Medical Information</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="info-grid">
+          <div class="info-item" *ngIf="userProfile?.bloodType">
+            <ion-label>Blood Type</ion-label>
+            <p>{{ userProfile?.bloodType }}</p>
+          </div>
+          <div class="info-item" *ngIf="userProfile?.medicalInfo">
+            <ion-label>Medical Conditions</ion-label>
+            <p>{{ userProfile?.medicalInfo }}</p>
+          </div>
+          <div class="info-item" *ngIf="userProfile?.allergies?.length">
+            <ion-label>Allergies</ion-label>
+            <div class="tags-container">
+              <ion-badge *ngFor="let allergy of userProfile?.allergies" color="warning">
+                {{ allergy }}
+              </ion-badge>
+            </div>
+          </div>
+          <div class="info-item" *ngIf="userProfile?.medications?.length">
+            <ion-label>Medications</ion-label>
+            <div class="tags-container">
+              <ion-badge *ngFor="let medication of userProfile?.medications" color="primary">
+                {{ medication }}
+              </ion-badge>
+            </div>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Emergency Contacts -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Emergency Contacts</ion-card-title>
+        <ion-button fill="clear" size="small" (click)="addEmergencyContact()">
+          <ion-icon name="add"></ion-icon>
+        </ion-button>
+      </ion-card-header>
+      <ion-card-content>
+        <div *ngIf="userProfile?.emergencyContacts?.length; else noContacts" class="contacts-list">
+          <div *ngFor="let contact of userProfile?.emergencyContacts" class="contact-item">
+            <div class="contact-info">
+              <h4>{{ contact.name }}</h4>
+              <p>{{ contact.phone }}</p>
+              <p class="relationship">{{ contact.relationship }}</p>
+            </div>
+            <div class="contact-actions">
+              <ion-badge *ngIf="contact.isPrimary" color="primary">Primary</ion-badge>
+              <ion-button fill="clear" size="small" (click)="editEmergencyContact(contact)">
+                <ion-icon name="create"></ion-icon>
+              </ion-button>
+              <ion-button fill="clear" size="small" color="danger" (click)="deleteEmergencyContact(contact)">
+                <ion-icon name="trash"></ion-icon>
+              </ion-button>
+            </div>
+          </div>
+        </div>
+        <ng-template #noContacts>
+          <div class="empty-contacts">
+            <ion-icon name="people" color="medium" size="large"></ion-icon>
+            <p>No emergency contacts added</p>
+            <ion-button expand="block" (click)="addEmergencyContact()">
+              <ion-icon name="add" slot="start"></ion-icon>
+              Add Emergency Contact
+            </ion-button>
+          </div>
+        </ng-template>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Notification Settings -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Notification Settings</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-list>
+          <ion-item>
+            <ion-label>Emergency Alerts</ion-label>
+            <ion-toggle 
+              [(ngModel)]="user.notificationSettings.emergencyAlerts"
+              (ionChange)="updateNotificationSettings()">
+            </ion-toggle>
+          </ion-item>
+          <ion-item>
+            <ion-label>Incident Updates</ion-label>
+            <ion-toggle 
+              [(ngModel)]="user.notificationSettings.incidentUpdates"
+              (ionChange)="updateNotificationSettings()">
+            </ion-toggle>
+          </ion-item>
+          <ion-item>
+            <ion-label>Security News</ion-label>
+            <ion-toggle 
+              [(ngModel)]="user.notificationSettings.securityNews"
+              (ionChange)="updateNotificationSettings()">
+            </ion-toggle>
+          </ion-item>
+          <ion-item>
+            <ion-label>Push Notifications</ion-label>
+            <ion-toggle 
+              [(ngModel)]="user.notificationSettings.pushNotifications"
+              (ionChange)="updateNotificationSettings()">
+            </ion-toggle>
+          </ion-item>
+          <ion-item>
+            <ion-label>Email Notifications</ion-label>
+            <ion-toggle 
+              [(ngModel)]="user.notificationSettings.emailNotifications"
+              (ionChange)="updateNotificationSettings()">
+            </ion-toggle>
+          </ion-item>
+          <ion-item>
+            <ion-label>SMS Notifications</ion-label>
+            <ion-toggle 
+              [(ngModel)]="user.notificationSettings.smsNotifications"
+              (ionChange)="updateNotificationSettings()">
+            </ion-toggle>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Account Settings -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Account Settings</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-list>
+          <ion-item button (click)="changePassword()">
+            <ion-icon name="key" slot="start"></ion-icon>
+            <ion-label>Change Password</ion-label>
+            <ion-icon name="chevron-forward" slot="end"></ion-icon>
+          </ion-item>
+          <ion-item button (click)="toggleBiometric()">
+            <ion-icon name="finger-print" slot="start"></ion-icon>
+            <ion-label>Biometric Authentication</ion-label>
+            <ion-toggle 
+              [(ngModel)]="user.biometricEnabled"
+              (ionChange)="updateBiometricSetting()">
+            </ion-toggle>
+          </ion-item>
+          <ion-item button (click)="changeLanguage()">
+            <ion-icon name="language" slot="start"></ion-icon>
+            <ion-label>Language</ion-label>
+            <ion-note slot="end">{{ getLanguageLabel(user.preferredLanguage) }}</ion-note>
+            <ion-icon name="chevron-forward" slot="end"></ion-icon>
+          </ion-item>
+          <ion-item button (click)="exportData()">
+            <ion-icon name="download" slot="start"></ion-icon>
+            <ion-label>Export Data</ion-label>
+            <ion-icon name="chevron-forward" slot="end"></ion-icon>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Security & Privacy -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Security & Privacy</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-list>
+          <ion-item button (click)="privacySettings()">
+            <ion-icon name="shield" slot="start"></ion-icon>
+            <ion-label>Privacy Settings</ion-label>
+            <ion-icon name="chevron-forward" slot="end"></ion-icon>
+          </ion-item>
+          <ion-item button (click)="dataUsage()">
+            <ion-icon name="analytics" slot="start"></ion-icon>
+            <ion-label>Data Usage</ion-label>
+            <ion-icon name="chevron-forward" slot="end"></ion-icon>
+          </ion-item>
+          <ion-item button (click)="deleteAccount()">
+            <ion-icon name="trash" slot="start" color="danger"></ion-icon>
+            <ion-label color="danger">Delete Account</ion-label>
+            <ion-icon name="chevron-forward" slot="end"></ion-icon>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Account Actions -->
+    <ion-card>
+      <ion-card-content>
+        <ion-button expand="block" (click)="signOut()" color="medium">
+          <ion-icon name="log-out" slot="start"></ion-icon>
+          Sign Out
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <div *ngIf="!isLoading && !user" class="ion-padding">
+    <ion-card>
+      <ion-card-content class="error-content">
+        <ion-icon name="alert-circle" color="danger" size="large"></ion-icon>
+        <h2>Profile Not Found</h2>
+        <p>Unable to load your profile information.</p>
+        <ion-button expand="block" (click)="loadProfile()">
+          <ion-icon name="refresh" slot="start"></ion-icon>
+          Try Again
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
   </div>
 </ion-content>

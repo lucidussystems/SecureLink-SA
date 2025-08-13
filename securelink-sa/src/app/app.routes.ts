@@ -20,23 +20,23 @@ export const routes: Routes = [
   },
   {
     path: 'profile',
-    loadChildren: () => import('./pages/profile/profile.module').then(m => m.ProfilePageModule)
+    loadComponent: () => import('./pages/profile/profile.page').then(m => m.ProfilePage)
   },
   {
     path: 'incidents',
     loadChildren: () => import('./pages/incidents/incidents.module').then(m => m.IncidentsPageModule)
   },
   {
-    path: 'incident-details',
-    loadChildren: () => import('./pages/incident-details/incident-details.module').then(m => m.IncidentDetailsPageModule)
+    path: 'incident-details/:id',
+    loadComponent: () => import('./pages/incident-details/incident-details.page').then(m => m.IncidentDetailsPage)
   },
   {
     path: 'report-incident',
-    loadChildren: () => import('./pages/report-incident/report-incident.module').then(m => m.ReportIncidentPageModule)
+    loadComponent: () => import('./pages/report-incident/report-incident.page').then(m => m.ReportIncidentPage)
   },
   {
     path: 'emergency-history',
-    loadChildren: () => import('./pages/emergency-history/emergency-history.module').then(m => m.EmergencyHistoryPageModule)
+    loadComponent: () => import('./pages/emergency-history/emergency-history.page').then(m => m.EmergencyHistoryPage)
   },
   {
     path: 'emergency-details',

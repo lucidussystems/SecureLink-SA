@@ -1,12 +1,211 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/incidents"></ion-back-button>
+    </ion-buttons>
     <ion-title>Incident Details</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="refreshIncident()" [disabled]="isLoading">
+        <ion-icon name="refresh"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <div class="ion-padding">
-    <h1>Incident Details Page</h1>
-    <p>Incident Details functionality coming soon...</p>
+  <div *ngIf="isLoading" class="loading-container">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Loading incident details...</p>
+  </div>
+
+  <div *ngIf="!isLoading && incident" class="ion-padding">
+    <!-- Incident Header -->
+    <ion-card class="incident-header">
+      <ion-card-content>
+        <div class="incident-title">
+          <h1>{{ incident.title }}</h1>
+          <ion-badge [color]="getSeverityColor(incident.severity)">
+            {{ incident.severity | titlecase }}
+          </ion-badge>
+        </div>
+        <div class="incident-meta">
+          <p><ion-icon name="time"></ion-icon> {{ incident.createdAt | date:'medium' }}</p>
+          <p><ion-icon name="location"></ion-icon> {{ incident.address || 'Location captured' }}</p>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Status Card -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Status</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="status-info">
+          <ion-badge [color]="getStatusColor(incident.status)" class="status-badge">
+            {{ incident.status | titlecase }}
+          </ion-badge>
+          <p class="status-description">{{ getStatusDescription(incident.status) }}</p>
+        </div>
+        
+        <div *ngIf="incident.assignedPersonnelId" class="assigned-info">
+          <ion-icon name="person"></ion-icon>
+          <span>Assigned to: {{ incident.assignedPersonnelId }}</span>
+        </div>
+
+        <div *ngIf="incident.estimatedResolution" class="resolution-info">
+          <ion-icon name="calendar"></ion-icon>
+          <span>Estimated resolution: {{ incident.estimatedResolution | date:'medium' }}</span>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Incident Details -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Details</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="detail-item">
+          <ion-label>Type</ion-label>
+          <p>{{ incident.type | titlecase }}</p>
+        </div>
+        
+        <div class="detail-item">
+          <ion-label>Description</ion-label>
+          <p>{{ incident.description }}</p>
+        </div>
+
+        <div *ngIf="incident.tags && incident.tags.length > 0" class="detail-item">
+          <ion-label>Tags</ion-label>
+          <div class="tags-container">
+            <ion-badge *ngFor="let tag of incident.tags" color="medium">
+              {{ tag }}
+            </ion-badge>
+          </div>
+        </div>
+
+        <div class="detail-item">
+          <ion-label>Public</ion-label>
+          <p>{{ incident.isPublic ? 'Yes' : 'No' }}</p>
+        </div>
+
+        <div class="detail-item">
+          <ion-label>Follow-up Required</ion-label>
+          <p>{{ incident.followUpRequired ? 'Yes' : 'No' }}</p>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Location -->
+    <ion-card *ngIf="incident.location">
+      <ion-card-header>
+        <ion-card-title>Location</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="location-info">
+          <p><strong>Coordinates:</strong> {{ incident.location.latitude | number:'1.6-6' }}, {{ incident.location.longitude | number:'1.6-6' }}</p>
+          <p *ngIf="incident.location.accuracy"><strong>Accuracy:</strong> {{ incident.location.accuracy }}m</p>
+          <ion-button expand="block" (click)="openMap()">
+            <ion-icon name="map" slot="start"></ion-icon>
+            View on Map
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Media Evidence -->
+    <ion-card *ngIf="incident.photos.length > 0 || incident.videos.length > 0">
+      <ion-card-header>
+        <ion-card-title>Media Evidence</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="media-section" *ngIf="incident.photos.length > 0">
+          <h4>Photos ({{ incident.photos.length }})</h4>
+          <div class="media-grid">
+            <div *ngFor="let photo of incident.photos; let i = index" class="media-item" (click)="viewPhoto(photo, i)">
+              <img [src]="photo" alt="Evidence photo">
+            </div>
+          </div>
+        </div>
+
+        <div class="media-section" *ngIf="incident.videos.length > 0">
+          <h4>Videos ({{ incident.videos.length }})</h4>
+          <div class="media-grid">
+            <div *ngFor="let video of incident.videos; let i = index" class="media-item">
+              <video [src]="video" controls></video>
+            </div>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Updates -->
+    <ion-card *ngIf="updates.length > 0">
+      <ion-card-header>
+        <ion-card-title>Updates</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="updates-list">
+          <div *ngFor="let update of updates" class="update-item">
+            <div class="update-header">
+              <ion-badge [color]="getStatusColor(update.status)">
+                {{ update.status | titlecase }}
+              </ion-badge>
+              <span class="update-time">{{ update.createdAt | date:'short' }}</span>
+            </div>
+            <p class="update-message">{{ update.message }}</p>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Actions -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Actions</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="actions-grid">
+          <ion-button expand="block" (click)="addUpdate()" [disabled]="!canAddUpdate()">
+            <ion-icon name="add-circle" slot="start"></ion-icon>
+            Add Update
+          </ion-button>
+          
+          <ion-button expand="block" (click)="shareIncident()" fill="outline">
+            <ion-icon name="share" slot="start"></ion-icon>
+            Share
+          </ion-button>
+          
+          <ion-button expand="block" (click)="exportIncident()" fill="outline">
+            <ion-icon name="download" slot="start"></ion-icon>
+            Export
+          </ion-button>
+          
+          <ion-button 
+            expand="block" 
+            (click)="closeIncident()" 
+            [disabled]="!canCloseIncident()"
+            color="success">
+            <ion-icon name="checkmark-circle" slot="start"></ion-icon>
+            Close Incident
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <div *ngIf="!isLoading && !incident" class="ion-padding">
+    <ion-card>
+      <ion-card-content class="error-content">
+        <ion-icon name="alert-circle" color="danger" size="large"></ion-icon>
+        <h2>Incident Not Found</h2>
+        <p>The incident you're looking for could not be found or has been removed.</p>
+        <ion-button expand="block" (click)="goBack()">
+          <ion-icon name="arrow-back" slot="start"></ion-icon>
+          Go Back
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
   </div>
 </ion-content>

@@ -1,1 +1,391 @@
-// Emergency History page styles
+ion-content {
+  --background: var(--ion-color-light);
+}
+
+ion-toolbar {
+  --background: white;
+  --border-color: var(--ion-color-light-shade);
+}
+
+ion-searchbar {
+  --background: var(--ion-color-light-shade);
+  --border-radius: 8px;
+  --box-shadow: none;
+  margin: 8px 0;
+}
+
+ion-segment {
+  --background: var(--ion-color-light-shade);
+  border-radius: 8px;
+  margin: 8px 0;
+}
+
+ion-segment-button {
+  --background-checked: var(--ion-color-primary);
+  --color-checked: white;
+  --color: var(--ion-color-medium);
+  --indicator-color: transparent;
+  border-radius: 8px;
+  margin: 2px;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  
+  ion-spinner {
+    margin-bottom: 16px;
+  }
+  
+  p {
+    color: var(--ion-color-medium);
+    margin: 0;
+  }
+}
+
+ion-list {
+  background: transparent;
+  padding: 0;
+}
+
+ion-item {
+  --background: white;
+  --border-radius: 12px;
+  margin: 8px 0;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --inner-padding-end: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  ion-thumbnail {
+    --size: 60px;
+    border-radius: 8px;
+    background: var(--ion-color-light-shade);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    ion-icon {
+      font-size: 32px;
+    }
+  }
+  
+  ion-label {
+    h2 {
+      font-weight: 600;
+      color: var(--ion-color-dark);
+      margin-bottom: 4px;
+    }
+    
+    p {
+      color: var(--ion-color-medium);
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+  }
+}
+
+.emergency-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  
+  ion-badge {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+  }
+  
+  .time {
+    color: var(--ion-color-medium);
+    font-size: 0.8rem;
+    margin-left: auto;
+  }
+}
+
+ion-item-options {
+  ion-item-option {
+    --background: var(--ion-color-primary);
+    --color: white;
+    
+    &:nth-child(2) {
+      --background: var(--ion-color-secondary);
+    }
+    
+    &:nth-child(3) {
+      --background: var(--ion-color-danger);
+    }
+  }
+}
+
+.empty-state {
+  padding: 32px 16px;
+  
+  ion-card {
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .empty-content {
+    text-align: center;
+    padding: 32px;
+    
+    ion-icon {
+      margin-bottom: 16px;
+    }
+    
+    h2 {
+      margin: 16px 0 8px 0;
+      color: var(--ion-color-dark);
+      font-weight: 600;
+    }
+    
+    p {
+      color: var(--ion-color-medium);
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+  }
+}
+
+.stats-card {
+  margin: 16px 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  
+  ion-card-header {
+    background: var(--ion-color-primary);
+    color: white;
+    border-radius: 12px 12px 0 0;
+    
+    ion-card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 0;
+    }
+  }
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding: 16px 0;
+}
+
+.stat-item {
+  text-align: center;
+  
+  .stat-number {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--ion-color-primary);
+    margin-bottom: 4px;
+  }
+  
+  .stat-label {
+    font-size: 0.8rem;
+    color: var(--ion-color-medium);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+
+// Emergency Details Modal
+ion-modal {
+  --height: 90%;
+  --border-radius: 16px 16px 0 0;
+}
+
+.emergency-header {
+  ion-card-content {
+    text-align: center;
+    padding: 24px;
+  }
+  
+  .emergency-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 16px;
+    
+    ion-icon {
+      font-size: 48px;
+    }
+    
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--ion-color-dark);
+    }
+  }
+  
+  .emergency-status {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+}
+
+.detail-item {
+  margin-bottom: 16px;
+  
+  ion-label {
+    font-weight: 600;
+    color: var(--ion-color-dark);
+    margin-bottom: 4px;
+    display: block;
+  }
+  
+  p {
+    margin: 0;
+    color: var(--ion-color-medium);
+    line-height: 1.4;
+  }
+}
+
+.location-info {
+  p {
+    margin-bottom: 8px;
+    
+    strong {
+      color: var(--ion-color-dark);
+    }
+  }
+}
+
+.contacts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contact-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: var(--ion-color-light-shade);
+  border-radius: 8px;
+  
+  .contact-info {
+    flex: 1;
+    
+    h4 {
+      margin: 0 0 4px 0;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--ion-color-dark);
+    }
+    
+    p {
+      margin: 2px 0;
+      color: var(--ion-color-medium);
+      font-size: 0.9rem;
+    }
+    
+    .relationship {
+      font-style: italic;
+      color: var(--ion-color-medium-shade);
+    }
+  }
+  
+  ion-badge {
+    margin-left: 8px;
+  }
+}
+
+// Responsive design
+@media (max-width: 576px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  
+  .stat-item .stat-number {
+    font-size: 1.5rem;
+  }
+  
+  .emergency-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    
+    .time {
+      margin-left: 0;
+    }
+  }
+  
+  ion-item {
+    --padding-start: 12px;
+    --padding-end: 12px;
+  }
+  
+  ion-thumbnail {
+    --size: 50px;
+    
+    ion-icon {
+      font-size: 24px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .emergency-header .emergency-title {
+    flex-direction: column;
+    gap: 8px;
+    
+    h1 {
+      font-size: 1.3rem;
+    }
+  }
+}
+
+// Loading states
+ion-button[disabled] {
+  opacity: 0.6;
+}
+
+// Animation for list items
+ion-item {
+  animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Focus states
+ion-item:focus-within {
+  --border-color: var(--ion-color-primary);
+  --border-width: 2px;
+}
+
+// Success states
+ion-item.item-has-success {
+  --border-color: var(--ion-color-success);
+}
+
+// Danger states
+ion-item.item-has-danger {
+  --border-color: var(--ion-color-danger);
+}

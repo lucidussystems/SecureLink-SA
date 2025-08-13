@@ -1,12 +1,263 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
     <ion-title>Emergency History</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="refreshEmergencies()" [disabled]="isLoading">
+        <ion-icon name="refresh"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <div class="ion-padding">
-    <h1>Emergency History Page</h1>
-    <p>Emergency History functionality coming soon...</p>
+  <!-- Search and Filter Bar -->
+  <ion-toolbar>
+    <ion-searchbar 
+      [(ngModel)]="searchTerm" 
+      (ionInput)="filterEmergencies()"
+      placeholder="Search emergencies..."
+      show-clear-button="focus">
+    </ion-searchbar>
+  </ion-toolbar>
+
+  <ion-toolbar>
+    <ion-segment [(ngModel)]="selectedFilter" (ionChange)="filterEmergencies()">
+      <ion-segment-button value="all">
+        <ion-label>All</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="active">
+        <ion-label>Active</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="resolved">
+        <ion-label>Resolved</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="cancelled">
+        <ion-label>Cancelled</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Loading emergency history...</p>
   </div>
+
+  <!-- Emergency List -->
+  <div *ngIf="!isLoading && filteredEmergencies.length > 0" class="ion-padding">
+    <ion-list>
+      <ion-item-sliding *ngFor="let emergency of filteredEmergencies" (click)="viewEmergency(emergency)">
+        <ion-item>
+          <ion-thumbnail slot="start">
+            <ion-icon 
+              [name]="getEmergencyIcon(emergency.type)" 
+              [color]="getEmergencyColor(emergency.type)"
+              size="large">
+            </ion-icon>
+          </ion-thumbnail>
+          
+          <ion-label>
+            <h2>{{ getEmergencyTypeLabel(emergency.type) }}</h2>
+            <p>{{ emergency.description || 'Emergency reported' }}</p>
+            <div class="emergency-meta">
+              <ion-badge [color]="getStatusColor(emergency.status)">
+                {{ emergency.status | titlecase }}
+              </ion-badge>
+              <ion-badge [color]="getPriorityColor(emergency.priority)">
+                {{ emergency.priority | titlecase }}
+              </ion-badge>
+              <span class="time">{{ emergency.createdAt | date:'short' }}</span>
+            </div>
+          </ion-label>
+
+          <ion-icon 
+            slot="end" 
+            name="chevron-forward" 
+            color="medium">
+          </ion-icon>
+        </ion-item>
+
+        <ion-item-options side="end">
+          <ion-item-option color="primary" (click)="viewEmergency(emergency)">
+            <ion-icon slot="icon-only" name="eye"></ion-icon>
+          </ion-item-option>
+          <ion-item-option color="secondary" (click)="shareEmergency(emergency)">
+            <ion-icon slot="icon-only" name="share"></ion-icon>
+          </ion-item-option>
+          <ion-item-option color="danger" (click)="deleteEmergency(emergency)">
+            <ion-icon slot="icon-only" name="trash"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
+      </ion-item-sliding>
+    </ion-list>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && filteredEmergencies.length === 0" class="empty-state">
+    <ion-card>
+      <ion-card-content>
+        <div class="empty-content">
+          <ion-icon name="shield-checkmark" color="medium" size="large"></ion-icon>
+          <h2>No Emergencies Found</h2>
+          <p *ngIf="searchTerm || selectedFilter !== 'all'">
+            No emergencies match your current search criteria.
+          </p>
+          <p *ngIf="!searchTerm && selectedFilter === 'all'">
+            You haven't reported any emergencies yet.
+          </p>
+          <ion-button expand="block" (click)="clearFilters()" *ngIf="searchTerm || selectedFilter !== 'all'">
+            <ion-icon name="refresh" slot="start"></ion-icon>
+            Clear Filters
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Statistics Card -->
+  <ion-card *ngIf="!isLoading && emergencies.length > 0" class="stats-card">
+    <ion-card-header>
+      <ion-card-title>Emergency Statistics</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-number">{{ getTotalEmergencies() }}</div>
+          <div class="stat-label">Total</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">{{ getActiveEmergencies() }}</div>
+          <div class="stat-label">Active</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">{{ getResolvedEmergencies() }}</div>
+          <div class="stat-label">Resolved</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">{{ getAverageResponseTime() }}m</div>
+          <div class="stat-label">Avg Response</div>
+        </div>
+      </div>
+    </ion-card-content>
+  </ion-card>
 </ion-content>
+
+<!-- Emergency Details Modal -->
+<ion-modal #emergencyModal [isOpen]="showEmergencyModal" (didDismiss)="closeEmergencyModal()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Emergency Details</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeEmergencyModal()">
+            <ion-icon name="close"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    
+    <ion-content *ngIf="selectedEmergency">
+      <div class="ion-padding">
+        <ion-card class="emergency-header">
+          <ion-card-content>
+            <div class="emergency-title">
+              <ion-icon 
+                [name]="getEmergencyIcon(selectedEmergency.type)" 
+                [color]="getEmergencyColor(selectedEmergency.type)"
+                size="large">
+              </ion-icon>
+              <h1>{{ getEmergencyTypeLabel(selectedEmergency.type) }}</h1>
+            </div>
+            <div class="emergency-status">
+              <ion-badge [color]="getStatusColor(selectedEmergency.status)">
+                {{ selectedEmergency.status | titlecase }}
+              </ion-badge>
+              <ion-badge [color]="getPriorityColor(selectedEmergency.priority)">
+                {{ selectedEmergency.priority | titlecase }}
+              </ion-badge>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>Details</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="detail-item">
+              <ion-label>Reported</ion-label>
+              <p>{{ selectedEmergency.createdAt | date:'medium' }}</p>
+            </div>
+            
+            <div class="detail-item" *ngIf="selectedEmergency.description">
+              <ion-label>Description</ion-label>
+              <p>{{ selectedEmergency.description }}</p>
+            </div>
+
+            <div class="detail-item" *ngIf="selectedEmergency.address">
+              <ion-label>Address</ion-label>
+              <p>{{ selectedEmergency.address }}</p>
+            </div>
+
+            <div class="detail-item" *ngIf="selectedEmergency.assignedPersonnelId">
+              <ion-label>Assigned To</ion-label>
+              <p>{{ selectedEmergency.assignedPersonnelId }}</p>
+            </div>
+
+            <div class="detail-item" *ngIf="selectedEmergency.estimatedResponseTime">
+              <ion-label>Estimated Response</ion-label>
+              <p>{{ selectedEmergency.estimatedResponseTime }} minutes</p>
+            </div>
+
+            <div class="detail-item" *ngIf="selectedEmergency.actualResponseTime">
+              <ion-label>Actual Response</ion-label>
+              <p>{{ selectedEmergency.actualResponseTime }} minutes</p>
+            </div>
+
+            <div class="detail-item" *ngIf="selectedEmergency.resolvedAt">
+              <ion-label>Resolved</ion-label>
+              <p>{{ selectedEmergency.resolvedAt | date:'medium' }}</p>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
+        <ion-card *ngIf="selectedEmergency.location">
+          <ion-card-header>
+            <ion-card-title>Location</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="location-info">
+              <p><strong>Coordinates:</strong> {{ selectedEmergency.location.latitude | number:'1.6-6' }}, {{ selectedEmergency.location.longitude | number:'1.6-6' }}</p>
+              <p *ngIf="selectedEmergency.location.accuracy"><strong>Accuracy:</strong> {{ selectedEmergency.location.accuracy }}m</p>
+              <ion-button expand="block" (click)="openMap(selectedEmergency)">
+                <ion-icon name="map" slot="start"></ion-icon>
+                View on Map
+              </ion-button>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
+        <ion-card *ngIf="selectedEmergency.emergencyContacts && selectedEmergency.emergencyContacts.length > 0">
+          <ion-card-header>
+            <ion-card-title>Emergency Contacts</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="contacts-list">
+              <div *ngFor="let contact of selectedEmergency.emergencyContacts" class="contact-item">
+                <div class="contact-info">
+                  <h4>{{ contact.name }}</h4>
+                  <p>{{ contact.phone }}</p>
+                  <p class="relationship">{{ contact.relationship }}</p>
+                </div>
+                <ion-badge *ngIf="contact.isPrimary" color="primary">Primary</ion-badge>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>
